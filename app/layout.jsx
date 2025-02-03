@@ -36,8 +36,8 @@ const abrilFatface = Abril_Fatface({
 });
 
 export const metadata = {
-  title: "Ahmed El Sayed",
-  description: "LMS System Created by Kerlos Hany",
+  title: "Shahad Hany",
+  description: "هدف منصتنا ان نخلي الكيمياء مجرد لعبة بالنسبالك ❤️",
 };
 
 export default function RootLayout({ children }) {

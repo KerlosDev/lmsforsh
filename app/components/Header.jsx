@@ -5,6 +5,7 @@ import ThemeToggle from './ThemeToggle'
 import { UserButton, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { PiStudentBold } from "react-icons/pi";
+import { FaBookBookmark } from "react-icons/fa6";
 
 const Header = () => {
     const { user } = useUser()
@@ -19,10 +20,10 @@ const Header = () => {
 
     return (
         <div className="flex flex-col  md:flex-row items-center justify-between gap-4 p-4">
-            
+
             {/* Theme Toggle */}
 
-            
+
             <div className="flex  items-center  gap-4">
                 <ThemeToggle />
                 <Link href="/subscriptions">
@@ -41,7 +42,7 @@ const Header = () => {
 
                         </div>
 
-                    
+
                     </div>
                 ) : (
                     <div className="flex flex-wrap  justify-center gap-4">
@@ -82,13 +83,10 @@ const Header = () => {
                 <div className=' max-md:hidden flex place-items-center  dark:text-slate-400 text-4xl   p-3 pb-6 rounded-t-2xl  rounded-l-2xl drop-shadow-slate'>
 
 
-                    <svg className="block animate-pulse  mr-3 -mb-3  dark:hidden" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24">
-                        <path fill="#1e293b" d="M2 12c0-4.714 0-7.07 1.464-8.535c1.177-1.177 2.93-1.408 6.017-1.454v2.05c0 .556-.476.998-.96 1.273c-.915.518-1.56 1.706-1.56 2.757a2.519 2.519 0 1 0 5.039 0a2.519 2.519 0 0 0 5.038 0c0-1.051-.644-2.24-1.559-2.757c-.484-.275-.96-.717-.96-1.273V2.01c3.088.046 4.84.277 6.016 1.454C22 4.929 22 7.286 22 12s0 7.071-1.465 8.536c-1.171 1.171-2.914 1.406-5.978 1.452v-2.003c0-.557.476-.999.96-1.273c.915-.518 1.559-1.706 1.559-2.758a2.519 2.519 0 0 0-5.038 0a2.519 2.519 0 0 0-5.038 0c0 1.052.644 2.24 1.558 2.758c.485.274.961.716.961 1.273v2.005c-3.111-.045-4.873-.273-6.055-1.454C2 19.07 2 16.714 2 12" />
-                    </svg>
-                    <svg className="hidden animate-pulse  mr-3 -mb-3  dark:block" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24">
-                        <path fill="#94a3b8" d="M2 12c0-4.714 0-7.07 1.464-8.535c1.177-1.177 2.93-1.408 6.017-1.454v2.05c0 .556-.476.998-.96 1.273c-.915.518-1.56 1.706-1.56 2.757a2.519 2.519 0 1 0 5.039 0a2.519 2.519 0 0 0 5.038 0c0-1.051-.644-2.24-1.559-2.757c-.484-.275-.96-.717-.96-1.273V2.01c3.088.046 4.84.277 6.016 1.454C22 4.929 22 7.286 22 12s0 7.071-1.465 8.536c-1.171 1.171-2.914 1.406-5.978 1.452v-2.003c0-.557.476-.999.96-1.273c.915-.518 1.559-1.706 1.559-2.758a2.519 2.519 0 0 0-5.038 0a2.519 2.519 0 0 0-5.038 0c0 1.052.644 2.24 1.558 2.758c.485.274.961.716.961 1.273v2.005c-3.111-.045-4.873-.273-6.055-1.454C2 19.07 2 16.714 2 12" />
-                    </svg>
-                    <h2 className=" dark:text-slate-400 font-arabicUI text-4xl text-slate-800 ">احمد السيد</h2>
+             
+
+                    
+                    <h2 dir='rtl' className=" place-items-center gap-3 dark:text-slate-400 font-arabicUI text-4xl text-slate-800 flex ">شهد هاني        <FaBookBookmark className=' text-5xl' /></h2>
                 </div>
             </Link>
         </div>

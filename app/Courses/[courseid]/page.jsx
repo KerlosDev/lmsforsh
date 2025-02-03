@@ -189,7 +189,7 @@ const page = ({ params }) => {
 
                         {courseVideoChapters[activeIndex]?.chaptervideo?.url ? (
 
-                            <video width={1000} controlsList="nodownload" poster='/brain.jpeg' key={courseVideoChapters[activeIndex]?.chaptervideo?.url} className=' my-6 rounded-2xl shadow-black/40 shadow-xl' height={500} controls>
+                            <video width={1000} controlsList="nodownload" poster='/god.jpg' key={courseVideoChapters[activeIndex]?.chaptervideo?.url} className=' my-6 rounded-2xl shadow-black/40 shadow-xl' height={500} controls>
                                 <source type='video/mp4' src={courseVideoChapters[activeIndex]?.chaptervideo?.url} />
                             </video>
 

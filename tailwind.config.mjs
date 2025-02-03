@@ -16,6 +16,7 @@ module.exports = {
      },
      backgroundImage: {
        'custom-image': "url('/dna.png')",
+       'chbg': "url('/chbg.svg')",
        'brain-image': "url('/brain.jpeg')",
        'blood-image': "url('/blood.jpeg')",
        'biopat-image': "url('/biopat.png')",
@@ -36,6 +37,7 @@ module.exports = {
        maincolor: "#000814",
        maincolor2: "#012a4a",
        secondcolr: "#ffb703",
+       yellowui: "#ffe100",
        thirdcolor:"#fb8500"
      },
      fontFamily: {

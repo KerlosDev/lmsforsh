@@ -8,33 +8,35 @@ import Link from 'next/link';
 
 const Footer = () => {
   return (
-    <div className=' cursor-default bg-slate-900 p-10 rounded-t-2xl '>
-      <div className=' flex justify-center'>
+   
+    <footer className="bg-gray-900 cursor-default text-gray-300">
+    <div className="container mx-auto ">
 
-        <div>
-          <div className=' flex justify-center gap-8 text-slate-500 max-sm:text-4xl text-5xl'>
-            <FaFacebook />
-            <BsWhatsapp />
-            <FaYoutube />
-            <FaTelegram />
-
-          </div>
-
-          <h3 className=' place-items-center flex justify-center w-full font-anton  max-sm:text-xl text-3xl m-auto text-slate-600 mt-10'>
-            <span className=' mx-3'>
-              <FaFileCode />
-            </span>
-            Developed By
-          
-            <a className=' hover:scale-125 transition-transform hover:ml-1 hover:bg-slate-500 rounded-xl p-1 px-2 hover:text-slate-800' href='https://www.facebook.com/kerlosDev/'>
-              Kerlos Hany
-            </a></h3>
+        <div className="mt-10 px-6  border-t-2 border-gray-700 py-3 text-center">
+            <p className=" font-anton  text-xl md:text-2xl">
 
 
+                Devloped By &nbsp;
+                <span className=' hover:scale-105 text-red-600'>
+                    Kerlos Hany
+                    &nbsp;
+                </span>
+                <Link href='/'>
+
+                    <span className=' bg-chbg text-slate-100  px-2 rounded-xl bg-cover font-arabicUI2 '>
+                        منصة شهد هاني
+                    </span>
+                </Link>
+
+
+            </p>
         </div>
 
-      </div>
+
     </div>
+</footer>
+
+    
   )
 }
 

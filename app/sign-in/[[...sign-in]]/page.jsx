@@ -4,10 +4,10 @@ import { SignIn } from '@clerk/nextjs'
 const page = () => {
     return (
         <div className=' m-10'>
-         
-            
 
-            <section className=" max-lg:hidden rounded-xl bg-[url('/dna.png')] bg-center bg-cover ">
+
+
+            <section className=" max-lg:hidden rounded-xl bg-[url('/chbg.jpg')] bg-center bg-cover ">
                 <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
                     <section className="relative flex h-32 items-end bg-gray-900 lg:col-span-5 lg:h-full xl:col-span-6">
                         <img
@@ -32,12 +32,12 @@ const page = () => {
                                 </svg>
                             </a>
 
-                            <h2 className="mt-6 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-                                Welcome to Ahmed El Sayed Platform 🧬
+                            <h2 className="mt-6 text-2xl font-bold text-white sm:text-3xl ">
+                                Welcome to Shahad Hany Platform 🧪
                             </h2>
 
-                            <p className="mt-4 leading-relaxed text-white/90">
-                                The Biology LMS is your hub for exploring the science of life through interactive resources and comprehensive study materials. From molecular biology to ecosystems, it offers tools and content to enhance your understanding and engagement with biology.
+                            <p dir='rtl' className="mt-4 leading-relaxed font-arabicUI2 text-xl text-white/90">
+فالمنصة دي كان هدفي اخلي الكيمياء بالنسبالك لعبة مش مجرد ماده هتاخدها وبعد متخلص ثانوية عامه ترميها لا بالعكس انت هتبقي عايز تكمل فيها لان احنا خليناها عادة مش مجرد ماده ❤️
                             </p>
                         </div>
                     </section>
@@ -76,7 +76,7 @@ const page = () => {
                             </div>
 
                             <div className='  text-4xl '>
-                            <SignIn></SignIn>
+                                <SignIn></SignIn>
                             </div>
 
 

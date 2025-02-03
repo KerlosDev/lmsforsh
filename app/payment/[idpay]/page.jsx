@@ -78,7 +78,7 @@ const Page = ({ params }) => {
         <div className='text-white max-sm:text-2xl text-5xl m-3 font-abril mt-7'>
 
             {user ? (
-                <div className='w-1/2 max-md:w-full max-sm:w-full m-auto bg-custom-image p-6 bg-cover rounded-xl shadow-2xl shadow-red-900/30'>
+                <div className='w-1/2 max-md:w-full max-sm:w-full m-auto bg-chbg p-6 bg-cover rounded-xl shadow-2xl shadow-red-900/30'>
                     <h1 className='m-auto flex justify-center font-arabicUI3'>
                         مرحبا بك فبوابه الدفع
                     </h1>
@@ -117,7 +117,7 @@ const Page = ({ params }) => {
                             حول علي الرقم ده
                         </h1>
                         <h1 className='m-auto mt-6 flex justify-center font-arabicUI3 place-items-center'>
-                            01080506463
+                        01004365906
                         </h1>
                         <h1 className='m-auto mt-6 flex justify-center font-arabicUI3 bg-black/15 border shadow-2xl shadow-white/20 p-4 rounded-xl w-fit place-items-center'>
                             مبلغ : {courseInfo.price} جنيه
