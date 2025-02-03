@@ -38,11 +38,11 @@ const page = () => {
                                 </a>
 
                                 <h2 className="mt-6 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-                                    Welcome to Ahmed El Sayed Platform 🧬
+                                    Welcome to Ahmed El Sayed Platform 🧬 Welcome to Shahad Hany Platform 🧪
                                 </h2>
 
-                                <p className="mt-4 leading-relaxed text-white/90">
-                                    The Biology LMS is your hub for exploring the science of life through interactive resources and comprehensive study materials. From molecular biology to ecosystems, it offers tools and content to enhance your understanding and engagement with biology.
+                                <p dir='rtl' className="mt-4 leading-relaxed font-arabicUI2 text-xl text-white/90">
+                                    فالمنصة دي كان هدفي اخلي الكيمياء بالنسبالك لعبة مش مجرد ماده هتاخدها وبعد متخلص ثانوية عامه ترميها لا بالعكس انت هتبقي عايز تكمل فيها لان احنا خليناها عادة مش مجرد ماده ❤️
                                 </p>
                             </div>
                         </section>
