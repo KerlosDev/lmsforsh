@@ -23,6 +23,7 @@ module.exports = {
        'blod2-image': "url('/blod2.jpeg')",
        'pattern-image': "url('/pattern.png')",
        'admin-imag': "url('/bgadmin.svg')",
+       'paton': "url('/pato.jpg')",
      },
      direction: {
        rtl: 'rtl', // Right-to-left

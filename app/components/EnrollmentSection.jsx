@@ -48,13 +48,13 @@ const EnrollmentSection = ({ courseInfo }) => {
 
                         {user ? (
                             isCourseFound ? (
-                                <h2 className=' text-white drop-shadow-2xl cursor-default flex justify-center max-sm:text-3xl text-center m-auto  font-arabicUI3 text-5xl'>
+                                <h2 className=' text-white drop-shadow-2xl cursor-default flex justify-center text-2xl text-center m-auto  font-arabicUI3 md:text-4xl'>
                                     <span className=' p-6 rounded-2xl text-green-500 block w-full bg-white m-auto text-center'>
                                         {isCourseFound ? <span className=' flex gap-5'><BsPatchCheckFill />تم الاشتراك</span> : "  اشترك دلوقتي"}
                                     </span>
                                 </h2>
                             ) : (<Link href={`/payment/${courseInfo.nicknameforcourse}`} >
-                                <h2 className=' text-white flex drop-shadow-2xl justify-center m-auto   max-sm:text-3xl text-center  font-arabicUI3 text-5xl'>
+                                <h2 className=' text-white flex drop-shadow-2xl justify-center   text-2xl text-center m-auto  font-arabicUI3 md:text-4xl'>
                                     <span className=' p-6 rounded-2xl text-green-500  block w-full bg-white m-auto text-center'>
                                         {isCourseFound ? <span className=' flex gap-5'><BsPatchCheckFill />تم الاشتراك</span> : "  اشترك دلوقتي"}
                                     </span>
@@ -64,7 +64,7 @@ const EnrollmentSection = ({ courseInfo }) => {
                         ) : (
 
                             <Link href='/sign-in' >
-                                <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-5xl'>
+                                <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl'>
                                     <span className=' p-6 rounded-2xl text-green-500 block w-full bg-white m-auto text-center'>اشترك دلوقتي</span>
                                 </h2>
                             </Link>
@@ -74,7 +74,7 @@ const EnrollmentSection = ({ courseInfo }) => {
 
 
                         {!isCourseFound && (
-                            <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-5xl my-5'>
+                            <h2  className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl my-5'>
                                 <span>جنيه</span>
                                 {courseInfo.price}بـــ
                             </h2>

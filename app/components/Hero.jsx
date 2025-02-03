@@ -20,7 +20,7 @@ const Hero = () => {
                     src="/sha.png"
                     width={600}
                     height={200}
-                    className="drop-shadow-2xl  hover:brightness-150 transition hover:scale-105  hidden lg:block"
+                    className="drop-shadow-2xl  brightness-150 transition hover:scale-105  hidden lg:block"
                     alt="Shahad Image"
                 />
             </div>
@@ -40,7 +40,7 @@ const Hero = () => {
                     src="/sha.png"
                     width={300}
                     height={100}
-                    className="drop-shadow-2xl hover:brightness-150 outline-yellow-400 outline-4 outline-dashed lg:hidden mx-auto mb-6"
+                    className="drop-shadow-2xl brightness-150 lg:hidden mx-auto mb-6"
                     alt="Shahad Image"
                 />
 
@@ -58,14 +58,14 @@ const Hero = () => {
                 </div>
 
                 {/* Motivational Quote */}
-                <h3 className="text-3xl lg:text-5xl text-yellow-500  duration-300 font-rakkas flex justify-center lg:justify-end items-center my-10 whitespace-nowrap">
+                <h3 className=" lg:text-5xl text-2xl text-yellow-500  duration-300 font-rakkas flex justify-center lg:justify-end items-center my-10 whitespace-nowrap">
                     <FaLightbulb className="mr-2" />
                     ❝ لو طريقك صعب اعرف ان النهاية حلوة ❞
                 </h3>
 
                 {/* Promotional Section */}
                 <div className="flex justify-center lg:justify-end">
-                    <div className="shadow-2xl shadow-yellow-400 rounded-xl bg-yellow-400 p-4">
+                    <div className="shadow-2xl shadow-yellow-400 rounded-xl bg-yellow-400 bg-paton bg-cover p-4">
                         <h2 className="text-xl lg:text-4xl text-slate-950 flex items-center">
                             <GiTakeMyMoney className="text-2xl lg:text-5xl mr-2" />
                             خصم علي كورس العضوية الان

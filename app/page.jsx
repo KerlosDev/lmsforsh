@@ -21,8 +21,7 @@ export default function Home() {
       
       <Hero></Hero>
 
-
-      <Content></Content>
+ 
       
       <Courses></Courses> 
     </div>

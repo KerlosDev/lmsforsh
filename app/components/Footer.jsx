@@ -12,8 +12,8 @@ const Footer = () => {
     <footer className="bg-gray-900 cursor-default text-gray-300">
     <div className="container mx-auto ">
 
-        <div className="mt-10 px-6  border-t-2 border-gray-700 py-3 text-center">
-            <p className=" font-anton  text-xl md:text-2xl">
+        <div className="mt-10   border-t-2 border-gray-700 py-3 text-center">
+            <p className=" font-anton  text-lg md:text-2xl">
 
 
                 Devloped By &nbsp;
