@@ -27,28 +27,26 @@ const getcourseinfo = async (courseid) => {
   const query2 = gql`
     query MyQuery {
   course(where: {nicknameforcourse: "`+ courseid + `"}) {
-    nameofcourse
+  
+  
+  nameofcourse
     price
     description
     color
     isfree
     nicknameforcourse
-     quiz {
-        id
-        quiztitle
-       
-      }
-   chapterMood {
-      chaptervideo {
-        url
-        fileName
-      }
-       nameofchapter
-
-
+    
+    quiz {
+      id
+      quiztitle
+    }
+    chapterMood {
+      linkOfVideo
+      nameofchapter
     }
   }
-}`
+}
+  `
 
   const result2 = await request(MASTER_URL, query2)
   return result2

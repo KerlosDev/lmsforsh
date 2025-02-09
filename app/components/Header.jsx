@@ -47,9 +47,9 @@ const Header = () => {
                 ) : (
                     <div className="flex flex-wrap  justify-center gap-4">
 
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex flex-col sm:flex-row gap-8">
                             {/* Sign In Button */}
-                            <div className="flex items-center bg-red-500 max-sm:text-xl text-3xl p-4 h-16 rounded-xl text-white font-arabicUI shadow-xl shadow-red-600/40 outline-dashed outline-red-500 outline-offset-4">
+                            <div className="flex items-center bg-pattern-image bg-cover bg-red-500 max-sm:text-xl text-3xl p-4 h-16 rounded-xl text-white font-arabicUI shadow-xl shadow-red-600/40 outline-dashed outline-red-500 outline-offset-4">
                                 <button onClick={handleSignIn}>تسجيل الدخول</button>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 448 512">
                                     <path
@@ -59,13 +59,14 @@ const Header = () => {
                                 </svg>
                             </div>
                             {/* Sign Up Button */}
-                            <div className="flex items-center justify-between bg-blue-500 max-sm:text-xl text-white text-3xl p-4 h-16 rounded-xl font-arabicUI shadow-xl shadow-blue-600/40 outline-dashed outline-blue-400 outline-offset-4">
+                            <div className="flex items-center group transition duration-300  justify-between bg-non3 bg-cover bg-blue-500 max-sm:text-xl text-white text-3xl p-4 h-16 rounded-xl font-arabicUI shadow-xl shadow-blue-600/40 outline-dashed outline-blue-600 outline-offset-4">
                                 <button onClick={handleSignUp}>انشاء حساب</button>
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="40"
                                     height="40"
-                                    viewBox="0 0 36 36"
+                                        viewBox="0 0 36 36"
+                                        className='group-hover:translate-x-2 transition duration-300'
                                 >
                                     <path
                                         fill="#fff"

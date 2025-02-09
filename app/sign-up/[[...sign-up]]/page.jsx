@@ -38,7 +38,7 @@ const page = () => {
                                 </a>
 
                                 <h2 className="mt-6 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-                                    Welcome to Ahmed El Sayed Platform 🧬 Welcome to Shahad Hany Platform 🧪
+                                 Welcome to Shahad Hany Platform 🧪
                                 </h2>
 
                                 <p dir='rtl' className="mt-4 leading-relaxed font-arabicUI2 text-xl text-white/90">

@@ -187,11 +187,17 @@ const page = ({ params }) => {
                     <div>
                         <h3 className=' text-right mb-8   text-4xl max-sm:text-xl text-white'>{courseVideoChapters[activeIndex]?.nameofchapter}</h3>
 
-                        {courseVideoChapters[activeIndex]?.chaptervideo?.url ? (
+                        {courseVideoChapters[activeIndex]?.linkOfVideo ? (
 
-                            <video width={1000} controlsList="nodownload" poster='/god.jpg' key={courseVideoChapters[activeIndex]?.chaptervideo?.url} className=' my-6 rounded-2xl shadow-black/40 shadow-xl' height={500} controls>
-                                <source type='video/mp4' src={courseVideoChapters[activeIndex]?.chaptervideo?.url} />
-                            </video>
+                            <div className="relative w-full aspect-video my-6 rounded-2xl shadow-black/40 shadow-xl">
+                                <iframe
+                                    className="w-full h-full rounded-2xl"
+                                    src={courseVideoChapters[activeIndex]?.linkOfVideo.replace("watch?v=", "embed/")}
+                                    title="YouTube video player"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
 
 
 

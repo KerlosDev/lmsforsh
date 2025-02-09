@@ -24,6 +24,7 @@ module.exports = {
        'pattern-image': "url('/pattern.png')",
        'admin-imag': "url('/bgadmin.svg')",
        'paton': "url('/pato.jpg')",
+       'non3': "url('/non3.png')",
      },
      direction: {
        rtl: 'rtl', // Right-to-left
