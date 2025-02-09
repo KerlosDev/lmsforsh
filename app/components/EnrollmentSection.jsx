@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { FaBookOpenReader } from "react-icons/fa6";
 import GlobalApi from '../api/GlobalApi';
 import { BsPatchCheckFill } from "react-icons/bs";
+import { GiClick } from 'react-icons/gi';
 
 
 
@@ -65,7 +66,8 @@ const EnrollmentSection = ({ courseInfo }) => {
 
                             <Link href='/sign-in' >
                                 <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl'>
-                                    <span className=' p-6 rounded-2xl text-green-500 block w-full bg-white m-auto text-center'>اشترك دلوقتي</span>
+                                        <span className='  p-6 rounded-2xl text-green-500 flex place-items-center gap-3 mx-auto justify-center hover:bg-green-200 transition duration-300 hover:text-green-700  w-full bg-white m-auto text-center '>اشترك دلوقتي <GiClick></GiClick>
+                                        </span>
                                 </h2>
                             </Link>
                         )}
@@ -74,9 +76,9 @@ const EnrollmentSection = ({ courseInfo }) => {
 
 
                         {!isCourseFound && (
-                            <h2  className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl my-5'>
-                                <span>جنيه</span>
-                                {courseInfo.price}بـــ
+                            <h2 dir='rtl' className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl my-5'>
+
+                                بــ {courseInfo.price} جنيه
                             </h2>
 
                         )}
