@@ -106,10 +106,10 @@ const page = ({ params }) => {
                                     </div>
                                 ))}
 
-
+{/* 
                                 <div className=' w-full outline-white outline-dashed outline-2 p-1 rounded-lg bg-white/20 h-2 my-8'></div>
                                 <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-5xl max-xl:text-3xl'>الاختبارات  </h2>
-
+ */}
 
                                 {courseInfo.quiz.map((item, index) => (
                                     <div key={index} onClick={() => handlechapterClick2(index)} className=' relative hover:scale-105 hover:bg-white  duration-500 cursor-pointer  rounded-lg my-5 text-right '>
@@ -146,9 +146,9 @@ const page = ({ params }) => {
                                     </div>
                                 ))}
 
-                                <div className=' w-full outline-white outline-dashed outline-2 p-1 rounded-lg bg-white/20 h-2 my-8'></div>
+                   {/*              <div className=' w-full outline-white outline-dashed outline-2 p-1 rounded-lg bg-white/20 h-2 my-8'></div>
                                 <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-5xl max-xl:text-3xl'>الاختبارات  </h2>
-
+ */}
 
                                 {courseInfo?.quiz && (
 
