@@ -7,37 +7,39 @@ import { FaFileCode } from "react-icons/fa";
 import Link from 'next/link';
 
 const Footer = () => {
-  return (
-   
-    <footer className="bg-gray-900 cursor-default text-gray-300">
-    <div className="container mx-auto ">
+    return (
 
-        <div className="mt-10   border-t-2 border-gray-700 py-3 text-center">
-            <p className=" font-anton  text-lg md:text-2xl">
+        <footer className="bg-gray-900 cursor-default text-gray-300">
+            <div className="container mx-auto ">
 
-
-                Devloped By &nbsp;
-                <span className=' hover:scale-105 text-red-600'>
-                    Kerlos Hany
-                    &nbsp;
-                </span>
-                <Link href='/'>
-
-                    <span className=' bg-chbg text-slate-100  px-2 rounded-xl bg-cover font-arabicUI2 '>
-                        منصة شهد هاني
-                    </span>
-                </Link>
+                <div className="mt-10   border-t-2 border-gray-700 py-3 text-center">
+                    <p className=" font-anton  text-lg md:text-2xl">
 
 
-            </p>
-        </div>
+                        Devloped By &nbsp;
+                        <a href="https://www.kerlos.site">
+                            <span className=' hover:scale-105 text-red-600'>
+                                Kerlos Hany
+                                &nbsp;
+                            </span>
+                        </a>
+                        <Link href='/'>
+
+                            <span className=' bg-chbg text-slate-100  px-2 rounded-xl bg-cover font-arabicUI2 '>
+                                منصة شهد هاني
+                            </span>
+                        </Link>
 
 
-    </div>
-</footer>
+                    </p>
+                </div>
 
-    
-  )
+
+            </div>
+        </footer>
+
+
+    )
 }
 
 export default Footer
