@@ -187,7 +187,7 @@ const page = ({ params }) => {
                     <div>
                         <h3 className=' text-right mb-8   text-4xl max-sm:text-xl text-white'>{courseVideoChapters[activeIndex]?.nameofchapter}</h3>
 
-                        {courseVideoChapters[activeIndex]?.linkOfVideo ? (
+                        {courseVideoChapters[activeIndex]?.linkOfVideo && isCourseFound ? (
 
                             <div className="relative w-full aspect-video my-6 rounded-2xl shadow-black/40 shadow-xl">
                                 <iframe
