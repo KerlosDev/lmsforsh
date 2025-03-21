@@ -59,6 +59,7 @@ const sendEnrollData = async (courseid, userEmail, phonenumber) => {
   mutation MyMutation {
   createUserEnroll(
     data: {course: {connect: {nicknameforcourse: "`+ courseid + `"}}, isHePaid: false, userEmail: "` + userEmail + `", courseid: "` + courseid + `", phonenumber: "` + phonenumber + `"}
+
   ) {
     id
     course {
@@ -66,7 +67,7 @@ const sendEnrollData = async (courseid, userEmail, phonenumber) => {
     }
     stage
   }
-     publishManyUserEnrollsConnection(where: {}) {
+     publishManyUserEnrollsConnection(first: 1000) {
     edges {
       node {
         id
@@ -190,8 +191,8 @@ query MyQuery {
 const data4admin = async () => {
   const dataa4admin = gql`
   
-  query MyQuery {
-  userEnrolls {
+  query MyQuery  {
+  userEnrolls (first: 1000) {
     userEmail
     courseid
     course {
@@ -208,18 +209,26 @@ const data4admin = async () => {
   return admindata
 }
 
-const editStateSub = async (idofEnroll,ActiveOrDeactive) => {
+const editStateSub = async (idofEnroll, ActiveOrDeactive) => {
   const query9 = gql`
   mutation MyMutation {
   updateUserEnroll(
-    data: {isHePaid: `+ActiveOrDeactive+`}
+    data: {isHePaid: `+ ActiveOrDeactive + `}
     where: {id: "`+ idofEnroll + `"}
+
   ) {
     id
   }
+    
+  publishManyUserEnrollsConnection(first: 1000) {
+    edges {
+      node {
+        id
+      }
+    }
+  }
 }
   
-
 
 
 
@@ -243,7 +252,7 @@ const publishEnrolls = async () => {
   }
 }
     `
-  
+
   const back = await request(MASTER_URL, wie)
   return back
 }

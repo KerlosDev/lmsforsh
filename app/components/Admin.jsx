@@ -4,7 +4,6 @@ import GlobalApi from '../api/GlobalApi';
 import AdminContent from './AdminContent';
 import { BsPatchCheckFill } from "react-icons/bs";
 
-
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
     const [email, setEmail] = useState('');
@@ -21,15 +20,12 @@ const Admin = () => {
     const [showConfirmation, setShowConfirmation] = useState(false)
     const emailsPerPage = 5; // Emails to show per page
 
-
-
     const updateStateoOfSub = () => {
         GlobalApi.editStateSub(idOfEnroll, activeornot).then(req => {
             console.log(req)
         })
         publishEnrolls()
     }
-
 
     const publishEnrolls = () => {
         GlobalApi.publishEnrolls().then(req => {
@@ -53,13 +49,10 @@ const Admin = () => {
         }
     };
 
-    console.log(filteredData);
-
     const handleSelectEmail = (item, index) => {
         setEmail(item);
         SetActiveEmail(index);
         setShowConfirmation(false)
-       
     };
 
     useEffect(() => {
@@ -71,8 +64,7 @@ const Admin = () => {
         setnumOFStu(res.userEnrolls);
     };
 
-    const uniqueEmails = [...new Set(numOfStu?.map((item) => item.userEmail))];
-
+    const uniqueEmails = [...new Set(numOfStu?.map((item) => item.userEmail))].reverse();
 
     const filteredEmails = uniqueEmails.filter((email) =>
         email.toLowerCase().includes(searchEmail.toLowerCase())
@@ -84,8 +76,6 @@ const Admin = () => {
             setFilteredData(result); // Update filtered data
         }
     }, [numOfStu, email]);
-
-    console.log(numOfStu);
 
     const convertDate = (dateStr) => {
         const date = new Date(dateStr);
@@ -105,7 +95,7 @@ const Admin = () => {
                     courseid: item.courseid,
                     totalPrice: item.course.price,
                     dataofSub: convertDate(item.course.updatedAt),
-                    isHeEnroll: item.isHePaid,
+                    isHePaid: item.isHePaid,
                     idOfEnroll: item.id
                 });
             }
@@ -114,7 +104,6 @@ const Admin = () => {
 
         return aggregatedData;
     }
-
 
     const totalPages = Math.ceil(filteredEmails.length / emailsPerPage); // Calculate total pages
     const paginatedEmails = filteredEmails.slice(
@@ -139,14 +128,8 @@ const Admin = () => {
     };
 
     const handleActive = (index) => {
-        console.log(index)
         setActiveBar(index)
-        
     }
-
-
-
-
 
     const handleIdOfEnroll = async (idOfEnroll, state) => {
         if (loadingAction) return; // Prevent multiple simultaneous actions
@@ -155,8 +138,14 @@ const Admin = () => {
         setActiveOrNot(state);
         try {
             await GlobalApi.editStateSub(idOfEnroll, state);
-            await GlobalApi.publishEnrolls();
             await dataAdmin(); // Refresh data after successful action
+
+            // Update isHePaid for the user's email
+            setFilteredData(prevData =>
+                prevData.map(item =>
+                    item.idOfEnroll === idOfEnroll ? { ...item, isHePaid: state } : item
+                )
+            );
         } catch (err) {
             console.error("Error updating enrollment state:", err);
         } finally {
@@ -164,23 +153,35 @@ const Admin = () => {
         }
     };
 
-    return (
-        <div className="select-none rounded-2xl mt-8 bg-admin-imag bg-cover bg-center m-5">
-            <h2 className="font-arabicUI3 pt-10 max-sm:text-3xl text-white text-5xl p-5 gap-4 m-auto flex justify-center">
-                <BsPatchCheckFill className=' scale-90'></BsPatchCheckFill>
-                لوحة الادمن
+    const handleCourseClick = (item) => {
+        setShowConfirmation(true);
+        setOfEnroll(item.idOfEnroll);
+        setActiveOrNot(!item.isHePaid);
+    };
 
-            </h2>
+    const confirmChange = async () => {
+        await handleIdOfEnroll(idOfEnroll, activeornot);
+        setShowConfirmation(false);
+    };
+
+    return (
+        <div className="select-none rounded-2xl mt-8 bg-admin-imag bg-cover bg-center  m-5">
+            <div className=' p-6'>
+                <h2 className="font-arabicUI3 pt-10 max-sm:text-3xl text-white text-5xl p-5 gap-4 m-auto flex justify-center">
+                    <BsPatchCheckFill className=' scale-90'></BsPatchCheckFill>
+                    لوحة الادمن
+                </h2>
+            </div>
+
             {password ? (
                 <>
-                    <div className="grid gap-5 p-5 backdrop-filter rtl-grid max-sm:grid-cols-1 grid-cols-5">
+                    <div className="grid gap-5 p-1 backdrop-filter rtl-grid max-sm:grid-cols-1 grid-cols-5">
                         {/* Number of Students */}
                         <div className="border-4 rounded-xl h-fit mx-auto m-4">
                             <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl  text-5xl text-white">
                                 عدد الطلاب المشتركين فكورسات
                             </h3>
                             <h3 className="p-2 text-center font-arabicUI3 flex justify-between text-6xl text-blue-950 bg-white m-4 rounded-xl">
-                                
                                 <span className="m-auto">{uniqueEmails.length}</span><span>طالب</span>
                             </h3>
                         </div>
@@ -231,59 +232,47 @@ const Admin = () => {
                             {email ? (
                                 filteredData.map((item, index) => (
                                     <h3 key={index} onClick={() => { handleActive(index) }}
-                                        className={`${!item.isHeEnroll ? "  bg-red-500 text-white " : " bg-white  text-blue-950 "}   ${index != activeBar && "cursor-pointer"} max-sm:text-sm  transition duration-500  text-right p-2  justify-end font-arabicUI3  text-4xl m-4 rounded-xl`}
+                                        className={`${item.isHePaid ? "bg-green-500 text-white" : "bg-red-500 text-white"} ${index != activeBar && "cursor-pointer"} max-sm:text-sm transition duration-500 text-right p-2 justify-end font-arabicUI3 text-4xl m-4 rounded-xl`}
                                     >
-                                        <div className=' flex justify-end  transition-transform duration-500'>
+                                        <div className='flex justify-end transition-transform duration-500'>
                                             <span className="m-auto">{item.courseid.toUpperCase()}</span>
                                             <span className="m-auto">{item.dataofSub} </span>
                                         </div>
 
                                         {index == activeBar && (
-                                            <div className='  transition-transform duration-500 '>
-
-                                                {!item.isHeEnroll ? (
-                                                    <span onClick={() => handleIdOfEnroll(item.idOfEnroll, true)} className=" cursor-pointer  transition-transform duration-500 m-4  mx-auto flex justify-center bg-blue-950 text-4xl text-white w-fit p-2 my-4 rounded-2xl  ">
-                                                        تفعيل الكورس
-                                                    </span>
-                                                ) : (
-                                                    <>
-                                                        <div className=' transition duration-300' onClick={() => handleIdOfEnroll(item.idOfEnroll, false)}>
-                                                            <span  onClick={()=>{setShowConfirmation(true)}} className=" flex max-sm:text-xl cursor-pointer   transition-transform duration-500 m-4  mx-auto  justify-center bg-blue-950 text-3xl text-white w-fit p-2 my-4 rounded-2xl  ">
-                                                                الغاء التفعيل | الكورس متفعل
-
-
-                                                            </span>
-                                                            {showConfirmation && <h4 className=' cursor-pointer  m-5 '> 
-                                                                الغاء تفعيل الكورس لهذا المستخدم ؟</h4>}
-
-                                                        </div>
-
-                                                    </>
-
-                                                )}
-
-
-
-
-
-                                            </div>)}
+                                            <div className='transition-transform duration-500'>
+                                                <span onClick={() => handleCourseClick(item)} className="cursor-pointer transition-transform duration-500 m-4 mx-auto flex justify-center bg-blue-950 text-2xl md:text-4xl text-white w-fit p-2 my-4 rounded-2xl">
+                                                    {loadingAction ? "جاري التحميل..." : (item.isHePaid ? "الكورس متفعل" : "تفعيل الكورس")}
+                                                </span>
+                                            </div>
+                                        )}
                                     </h3>
-
                                 ))
                             ) : (
-                                <h4 className="text-white m-5 font-arabicUI3 text-6xl text-center leading-relaxed bg-green-400 rounded-xl">
+                                <h4 className="text-white m-5 font-arabicUI3 text-2xl md:text-6xl text-center leading-relaxed bg-green-400 rounded-xl">
                                     اختار ايميل من فضلك
                                 </h4>
                             )}
 
-
+                            {showConfirmation && (
+                                <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
+                                    <div className=" backdrop-blur-2xl m-6 border p-5 rounded-xl text-center">
+                                        <h4 className="text-2xl text-white font-arabicUI2 mb-4">هل تريد تغيير حالة الدفع لهذا الكورس؟</h4>
+                                        <button onClick={confirmChange} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">نعم</button>
+                                        <button onClick={() => setShowConfirmation(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">لا</button>
+                                    </div>
+                                </div>
+                            )}
 
                         </div>
-
-
-                        
-
-                    
+                        <div className="border-4 rounded-xl h-fit  ">
+                            <h3 className="p-2 text-center m-1 rounded-t-md bg-white text-black font-arabicUI3 leading-normal max-sm:text-2xl  text-5xl ">
+                                اضافة طالب جديد
+                            </h3>
+                            <h3 className="p-2 text-center font-arabicUI3 flex justify-between text-6xl text-blue-950 bg-white m-4 rounded-xl">
+                                <span className="m-auto">{uniqueEmails.length}</span><span>طالب</span>
+                            </h3>
+                        </div>
                     </div>
                 </>
             ) : (
@@ -302,3 +291,4 @@ const Admin = () => {
 };
 
 export default Admin;
+
