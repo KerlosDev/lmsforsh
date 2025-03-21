@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import GlobalApi from '../api/GlobalApi';
 import AdminContent from './AdminContent';
 import { BsPatchCheckFill } from "react-icons/bs";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
@@ -18,6 +20,11 @@ const Admin = () => {
     const [loadingAction, setLoadingAction] = useState(false);
     const [activeornot, setActiveOrNot] = useState(false)
     const [showConfirmation, setShowConfirmation] = useState(false)
+    const [showCourseDialog, setShowCourseDialog] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState('');
+    const [courses, setCourses] = useState([]);
+    const [manualEmail, setManualEmail] = useState('');
+    
     const emailsPerPage = 5; // Emails to show per page
 
     const updateStateoOfSub = () => {
@@ -164,6 +171,49 @@ const Admin = () => {
         setShowConfirmation(false);
     };
 
+    const handleAddStudent = () => {
+        setShowCourseDialog(true);
+    };
+
+    const handleCourseSelect = (courseId) => {
+        setSelectedCourse(courseId);
+    };
+
+    const handleConfirmAddStudent = async () => {
+        if (selectedCourse && manualEmail) {
+            await GlobalApi.sendEnroll4Admin(selectedCourse, manualEmail);
+            await dataAdmin(); // Refresh data after adding student
+            setShowCourseDialog(false);
+            setSelectedCourse('');
+            setManualEmail('');
+          
+            toast.success(' تم اضافة الطالب بنجاح ✅', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+                
+                className: ' font-arabicUI2 m-4 p-4 ',
+                
+                
+            });
+            
+        }
+    };
+
+    // Fetch all courses
+    useEffect(() => {
+        const fetchCourses = async () => {
+            const res = await GlobalApi.getAllCourseList();
+            setCourses(res.courses);
+        };
+        fetchCourses();
+    }, []);
+
     return (
         <div className="select-none rounded-2xl mt-8 bg-admin-imag bg-cover bg-center  m-5">
             <div className=' p-6'>
@@ -173,108 +223,142 @@ const Admin = () => {
                 </h2>
             </div>
 
-                    <div className="grid gap-5 p-1 backdrop-filter rtl-grid max-sm:grid-cols-1 grid-cols-5">
-                        {/* Number of Students */}
-                        <div className="border-4 rounded-xl h-fit mx-auto m-4">
-                            <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl  text-5xl text-white">
-                                عدد الطلاب المشتركين فكورسات
+
+            <div className="grid gap-5 p-1 backdrop-filter rtl-grid max-sm:grid-cols-1 grid-cols-5">
+                {/* Number of Students */}
+                <div className="border-4 rounded-xl h-fit mx-auto m-4">
+                    <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl  text-5xl text-white">
+                        عدد الطلاب المشتركين فكورسات
+                    </h3>
+                    <h3 className="p-2 text-center font-arabicUI3 flex justify-between text-6xl text-blue-950 bg-white m-4 rounded-xl">
+                        <span className="m-auto">{uniqueEmails.length}</span><span>طالب</span>
+                    </h3>
+                </div>
+                <div className="border-4 rounded-xl col-span-2 m-4">
+                    <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl text-5xl text-white">
+                        ايميلات الطلاب المشتركين فكورسات
+                    </h3>
+                    <input
+                        value={searchEmail}
+                        onChange={(e) => setSearchEmail(e.target.value)}
+                        type="text"
+                        placeholder="بحث بالايميل.."
+                        className="text-left p-2 text-4xl max-sm:text-2xl w-4/5 flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
+                    />
+                    {paginatedEmails.map((item, index) => (
+                        <h3
+                            onClick={() => handleSelectEmail(item, index)}
+                            key={index}
+                            className={`${activeEmail === index
+                                ? 'bg-green-500 text-white'
+                                : 'text-blue-950 bg-white'
+                                } cursor-pointer duration-300 max-sm:text-sm text-right p-2 transition justify-end font-arabicUI3 flex text-4xl m-4 rounded-xl`}
+                        >
+                            <span className="m-auto">{item}</span>
+                        </h3>
+                    ))}
+                    <div className="flex justify-center mt-5">
+                        <button
+                            onClick={handlePreviousPage}
+                            disabled={currentPage === 1}
+                            className="px-5 py-2 bg-blue-500 max-sm:text-lg max-sm:p-2  text-white rounded-2xl font-arabicUI3 text-4xl m-2 disabled:opacity-50"
+                        >
+                            السابق
+                        </button>
+                        <button
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages}
+                            className="px-5 py-2 bg-blue-500 max-sm:text-lg max-sm:p-2 text-white rounded-2xl font-arabicUI3 text-4xl m-2 disabled:opacity-50"
+                        >
+                            التالي
+                        </button>
+                    </div>
+                </div>
+                <div className="border-4 rounded-xl col-span-2 m-4 h-fit">
+                    <h3 className="p-2 text-center font-arabicUI3 max-sm:text-xl leading-normal text-5xl text-white">
+                        تفاصيل الاشتراك
+                    </h3>
+                    {email ? (
+                        filteredData.map((item, index) => (
+                            <h3 key={index} onClick={() => { handleActive(index) }}
+                                className={`${item.isHePaid ? "bg-green-500 text-white" : "bg-red-500 text-white"} ${index != activeBar && "cursor-pointer"} max-sm:text-sm transition duration-500 text-right p-2 justify-end font-arabicUI3 text-4xl m-4 rounded-xl`}
+                            >
+                                <div className='flex justify-end transition-transform duration-500'>
+                                    <span className="m-auto">{item.courseid.toUpperCase()}</span>
+                                    <span className="m-auto">{item.dataofSub} </span>
+                                </div>
+
+                                {index == activeBar && (
+                                    <div className='transition-transform duration-500'>
+                                        <span onClick={() => handleCourseClick(item)} className="cursor-pointer transition-transform duration-500 m-4 mx-auto flex justify-center bg-blue-950 text-2xl md:text-4xl text-white w-fit p-2 my-4 rounded-2xl">
+                                            {loadingAction ? "جاري التحميل..." : (item.isHePaid ? "الكورس متفعل" : "تفعيل الكورس")}
+                                        </span>
+                                    </div>
+                                )}
                             </h3>
-                            <h3 className="p-2 text-center font-arabicUI3 flex justify-between text-6xl text-blue-950 bg-white m-4 rounded-xl">
-                                <span className="m-auto">{uniqueEmails.length}</span><span>طالب</span>
-                            </h3>
-                        </div>
-                        <div className="border-4 rounded-xl col-span-2 m-4">
-                            <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl text-5xl text-white">
-                                ايميلات الطلاب المشتركين فكورسات
-                            </h3>
-                            <input
-                                value={searchEmail}
-                                onChange={(e) => setSearchEmail(e.target.value)}
-                                type="text"
-                                placeholder="بحث بالايميل.."
-                                className="text-left p-2 text-4xl max-sm:text-2xl w-4/5 flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
-                            />
-                            {paginatedEmails.map((item, index) => (
-                                <h3
-                                    onClick={() => handleSelectEmail(item, index)}
-                                    key={index}
-                                    className={`${activeEmail === index
-                                        ? 'bg-green-500 text-white'
-                                        : 'text-blue-950 bg-white'
-                                        } cursor-pointer duration-300 max-sm:text-sm text-right p-2 transition justify-end font-arabicUI3 flex text-4xl m-4 rounded-xl`}
-                                >
-                                    <span className="m-auto">{item}</span>
-                                </h3>
-                            ))}
-                            <div className="flex justify-center mt-5">
-                                <button
-                                    onClick={handlePreviousPage}
-                                    disabled={currentPage === 1}
-                                    className="px-5 py-2 bg-blue-500 max-sm:text-lg max-sm:p-2  text-white rounded-2xl font-arabicUI3 text-4xl m-2 disabled:opacity-50"
-                                >
-                                    السابق
-                                </button>
-                                <button
-                                    onClick={handleNextPage}
-                                    disabled={currentPage === totalPages}
-                                    className="px-5 py-2 bg-blue-500 max-sm:text-lg max-sm:p-2 text-white rounded-2xl font-arabicUI3 text-4xl m-2 disabled:opacity-50"
-                                >
-                                    التالي
-                                </button>
+                        ))
+                    ) : (
+                        <h4 className="text-white m-5 font-arabicUI3 text-2xl md:text-6xl text-center leading-relaxed bg-green-400 rounded-xl">
+                            اختار ايميل من فضلك
+                        </h4>
+                    )}
+
+                    {showConfirmation && (
+                        <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
+                            <div className=" backdrop-blur-2xl m-6 border p-5 rounded-xl text-center">
+                                <h4 className="text-2xl text-white font-arabicUI2 mb-4">هل تريد تغيير حالة الدفع لهذا الكورس؟</h4>
+                                <button onClick={confirmChange} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">نعم</button>
+                                <button onClick={() => setShowConfirmation(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">لا</button>
                             </div>
                         </div>
-                        <div className="border-4 rounded-xl col-span-2 m-4 h-fit">
-                            <h3 className="p-2 text-center font-arabicUI3 max-sm:text-xl leading-normal text-5xl text-white">
-                                تفاصيل الاشتراك
-                            </h3>
-                            {email ? (
-                                filteredData.map((item, index) => (
-                                    <h3 key={index} onClick={() => { handleActive(index) }}
-                                        className={`${item.isHePaid ? "bg-green-500 text-white" : "bg-red-500 text-white"} ${index != activeBar && "cursor-pointer"} max-sm:text-sm transition duration-500 text-right p-2 justify-end font-arabicUI3 text-4xl m-4 rounded-xl`}
-                                    >
-                                        <div className='flex justify-end transition-transform duration-500'>
-                                            <span className="m-auto">{item.courseid.toUpperCase()}</span>
-                                            <span className="m-auto">{item.dataofSub} </span>
-                                        </div>
+                    )}
 
-                                        {index == activeBar && (
-                                            <div className='transition-transform duration-500'>
-                                                <span onClick={() => handleCourseClick(item)} className="cursor-pointer transition-transform duration-500 m-4 mx-auto flex justify-center bg-blue-950 text-2xl md:text-4xl text-white w-fit p-2 my-4 rounded-2xl">
-                                                    {loadingAction ? "جاري التحميل..." : (item.isHePaid ? "الكورس متفعل" : "تفعيل الكورس")}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </h3>
-                                ))
-                            ) : (
-                                <h4 className="text-white m-5 font-arabicUI3 text-2xl md:text-6xl text-center leading-relaxed bg-green-400 rounded-xl">
-                                    اختار ايميل من فضلك
-                                </h4>
-                            )}
+                </div>
+                <div className="  rounded-xl h-fit ">
+                    <button onClick={handleAddStudent} className=" bg-yellow-500 active:scale-110 ease-in-out transition text-yellow-800 p-3 rounded-xl text-4xl mx-auto flex justify-content-around outline-dashed outline-2 outline-yellow-500  outline-offset-4 hover:cursor-pointer buttonn text-center    font-arabicUI3 leading-normal max-sm:text-2xl ">
+                        اضافة طالب جديد
+                    </button>
 
-                            {showConfirmation && (
-                                <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
-                                    <div className=" backdrop-blur-2xl m-6 border p-5 rounded-xl text-center">
-                                        <h4 className="text-2xl text-white font-arabicUI2 mb-4">هل تريد تغيير حالة الدفع لهذا الكورس؟</h4>
-                                        <button onClick={confirmChange} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">نعم</button>
-                                        <button onClick={() => setShowConfirmation(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">لا</button>
-                                    </div>
-                                </div>
-                            )}
+                </div>
+            </div>
 
-                        </div>
-                        <div className="border-4 rounded-xl h-fit  ">
-                            <h3 className="p-2 text-center m-1 rounded-t-md bg-white text-black font-arabicUI3 leading-normal max-sm:text-2xl  text-5xl ">
-                                اضافة طالب جديد
-                            </h3>
-                            <h3 className="p-2 text-center font-arabicUI3 flex justify-between text-6xl text-blue-950 bg-white m-4 rounded-xl">
-                                <span className="m-auto">{uniqueEmails.length}</span><span>طالب</span>
-                            </h3>
-                        </div>
+            {showCourseDialog && (
+                <div className="fixed inset-0 flex items-center justify-center bg-opacity-50">
+                    <div className="backdrop-blur-2xl m-6 border p-5 rounded-xl text-center">
+                        <h4 className="text-2xl text-white font-arabicUI2 mb-4">اختر الكورس لتفعيله للبريد الإلكتروني:</h4>
+                        <input
+                            value={manualEmail}
+
+                            onChange={(e) => setManualEmail(e.target.value.replace(/\s/g, ''))}
+                            type="text"
+                            placeholder="ادخل البريد الإلكتروني.."
+                            className="text-left p-2 text-4xl w-full flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
+                        />
+                        <select
+                            value={selectedCourse}
+                            onChange={(e) => handleCourseSelect(e.target.value)}
+                            className="text-left p-2 text-2xl w-full flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
+                        >
+                            <option value="">اختر الكورس</option>
+                            {courses.map((course) => (
+                                <option key={course.id} value={course.nicknameforcourse}>
+                                    {course.nameofcourse}
+                                </option>
+                            ))}
+                        </select>
+                        <button onClick={handleConfirmAddStudent} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">
+                            تأكيد
+                        </button>
+                        <button onClick={() => setShowCourseDialog(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">
+                            إلغاء
+                        </button>
                     </div>
-                
-           
-        </div>
+                </div>
+            )}
+
+            <ToastContainer   />
+
+        </div >
     );
 };
 

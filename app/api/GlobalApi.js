@@ -257,7 +257,31 @@ const publishEnrolls = async () => {
   return back
 }
 
+const sendEnroll4Admin = async (courseid,email) => {
+  const wie = gql`
+ 
+  mutation MyMutation {
+  createUserEnroll(
+    data: {course: {connect: {nicknameforcourse: "`+courseid+`"}}, userEmail: "`+email+`", isHePaid: true, phonenumber: "010", courseid: "`+courseid+`"}
+  ) {
+    id
+  }
+  publishManyUserEnrollsConnection(first: 1000) {
+    edges {
+      node {
+        id
+      }
+    }
+  }
+}
+
+   `
+
+  const back = await request(MASTER_URL, wie)
+  return back
+}
 export default {
+  sendEnroll4Admin,
   getAllCourseList,
   getcourseinfo,
   sendEnrollData,
