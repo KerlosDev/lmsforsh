@@ -173,8 +173,6 @@ const Admin = () => {
                 </h2>
             </div>
 
-            {password ? (
-                <>
                     <div className="grid gap-5 p-1 backdrop-filter rtl-grid max-sm:grid-cols-1 grid-cols-5">
                         {/* Number of Students */}
                         <div className="border-4 rounded-xl h-fit mx-auto m-4">
@@ -274,18 +272,8 @@ const Admin = () => {
                             </h3>
                         </div>
                     </div>
-                </>
-            ) : (
-                <div>
-                    <input
-                        value={adminPass}
-                        onChange={(e) => handleInputPass(e)}
-                        type="text"
-                        placeholder="كلمه سر الادمن .."
-                        className="text-left p-2 text-4xl w-2/5 flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
-                    />
-                </div>
-            )}
+                
+           
         </div>
     );
 };
