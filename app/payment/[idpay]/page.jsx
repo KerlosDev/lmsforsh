@@ -89,6 +89,36 @@ const Page = ({ params }) => {
         }
     };
 
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-[#0A1121] text-white font-arabicUI3 flex items-center justify-center">
+                <div className="relative container mx-auto px-4">
+                    <div className="max-w-md mx-auto bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center space-y-4">
+                        <div className="w-16 h-16 bg-red-500/20 rounded-full mx-auto flex items-center justify-center">
+                            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m5-6a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold">يجب تسجيل الدخول</h2>
+                        <p className="text-gray-400">الرجاء تسجيل الدخول أو إنشاء حساب للوصول إلى صفحة الدفع</p>
+                        <div className="space-y-3">
+                            <Link href="/sign-in">
+                                <button className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl py-3">
+                                    تسجيل الدخول
+                                </button>
+                            </Link>
+                            <Link href="/sign-up">
+                                <button className="w-full bg-white/10 hover:bg-white/20 text-white rounded-xl py-3">
+                                    إنشاء حساب جديد
+                                </button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#0A1121] text-white font-arabicUI3">
             {/* Decorative Elements */}
@@ -98,13 +128,13 @@ const Page = ({ params }) => {
                 <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-gradient-to-tl from-indigo-500/20 to-transparent blur-[120px]" />
             </div>
 
-            <div className="relative container mx-auto px-4 py-8">
-                <div className="max-w-4xl mx-auto space-y-8">
+            <div className="relative container mx-auto px-4 py-4 sm:py-8">
+                <div className="max-w-4xl mx-auto space-y-4 sm:space-y-8">
                     {/* Header */}
                     <div className="text-center space-y-2">
                         <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full" />
-                        <h1 className="text-3xl md:text-4xl font-bold">إتمام عملية الشراء</h1>
-                        <p className="text-blue-400">خطوة واحدة تفصلك عن بداية رحلتك العلمية</p>
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">إتمام عملية الشراء</h1>
+                        <p className="text-blue-400 text-sm sm:text-base">خطوة واحدة تفصلك عن بداية رحلتك العلمية</p>
                     </div>
 
                     {error ? (
@@ -121,11 +151,11 @@ const Page = ({ params }) => {
                             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent" />
                         </div>
                     ) : courseInfo ? (
-                        <div className="grid md:grid-cols-5 gap-8">
+                        <div className="grid md:grid-cols-5 gap-4 sm:gap-8">
                             {/* Left Section: Course Details */}
 
                             {/* Left Section: Course Details */}
-                            <div dir='rtl' className="md:col-span-2 space-y-6">
+                            <div dir='rtl' className="md:col-span-2 space-y-4 sm:space-y-6">
                                 <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
                                     <div className="space-y-4">
                                         <div className="flex items-center space-x-3 rtl:space-x-reverse">
@@ -172,16 +202,16 @@ const Page = ({ params }) => {
 
                             {/* Payment Form Section */}
                             <div className="md:col-span-3">
-                                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-white/10">
                                     {!showmodel ? (
-                                        <div className="space-y-6">
+                                        <div className="space-y-4 sm:space-y-6">
                                             <div className="space-y-4">
-                                                <h3 className="text-xl font-medium text-center">طريقة الدفع</h3>
-                                                <div className="bg-gradient-to-r from-[#FF5A5F] to-[#FF8C8F] p-6 rounded-xl text-center space-y-3">
+                                                <h3 className="text-lg sm:text-xl font-medium text-center">طريقة الدفع</h3>
+                                                <div className="bg-gradient-to-r from-[#FF5A5F] to-[#FF8C8F] p-4 sm:p-6 rounded-xl text-center space-y-3">
                                                     {/*                                                     <img src="/vod.png" alt="Vodafone Cash" className="h-16 mx-auto" />
  */}                                                    <div className="space-y-2">
-                                                        <p className="text-xl">حول على رقم فودافون كاش</p>
-                                                        <p className="text-4xl font-bold tracking-wider">01004365906</p>
+                                                        <p className="text-lg sm:text-xl">حول على رقم فودافون كاش</p>
+                                                        <p className="text-2xl sm:text-4xl font-bold tracking-wider">01004365906</p>
                                                     </div>
                                                 </div>
                                             </div>

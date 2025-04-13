@@ -26,6 +26,7 @@ const Header = () => {
         }
         return '0';
     });
+    const [showMobileNotifications, setShowMobileNotifications] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -39,26 +40,48 @@ const Header = () => {
     const fetchNotifications = async () => {
         try {
             const response = await GlobalApi.getNotifications();
-            if (response?.notifictions) {
-                const notifArray = response.notifictions.map(n => ({
+            console.log('Notifications response:', response); // Debug log
+
+            if (response?.data?.notifications || response?.notifications) {
+                // Handle both possible response structures
+                const notificationsData = response?.data?.notifications || response?.notifications;
+                const notifArray = notificationsData.map(n => ({
                     ...n,
                     isRead: new Date(n.updatedAt) <= new Date(lastReadTime)
                 }));
+                console.log('Processed notifications:', notifArray); // Debug log
                 setNotifications(notifArray);
+
                 // Count unread notifications
                 const unread = notifArray.filter(n =>
                     new Date(n.updatedAt) > new Date(lastReadTime)
                 ).length;
                 setUnreadCount(unread);
+            } else {
+                console.log('No notifications found in response'); // Debug log
+                setNotifications([]);
+                setUnreadCount(0);
             }
         } catch (error) {
             console.error("Error fetching notifications:", error);
+            setNotifications([]);
+            setUnreadCount(0);
         }
     };
 
     const handleNotificationOpen = () => {
         setShowNotifications(!showNotifications);
         if (!showNotifications) {
+            const now = new Date().toISOString();
+            setLastReadTime(now);
+            localStorage.setItem('lastReadTime', now);
+            setUnreadCount(0);
+        }
+    };
+
+    const handleMobileNotificationClick = () => {
+        setShowMobileNotifications(!showMobileNotifications);
+        if (!showMobileNotifications) {
             const now = new Date().toISOString();
             setLastReadTime(now);
             localStorage.setItem('lastReadTime', now);
@@ -226,8 +249,66 @@ const Header = () => {
 
                             {/* Auth Section */}
                             {user ? (
-                                <div className="px-4 py-2">
-                                    <UserButton afterSignOutUrl="/" />
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={handleMobileNotificationClick}
+                                        className="flex items-center justify-between w-full px-4 py-3 text-slate-600 
+                                                 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 
+                                                 rounded-xl font-arabicUI transition-colors duration-200"
+                                    >
+                                        <span>الاشعارات</span>
+                                        <div className="relative">
+                                            <IoNotifications className="text-xl text-blue-500" />
+                                            {unreadCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 
+                                                               text-white text-xs flex items-center justify-center 
+                                                               rounded-full">{unreadCount}</span>
+                                            )}
+                                        </div>
+                                    </button>
+
+                                    {/* Mobile Notifications Popup */}
+                                    {showMobileNotifications && (
+                                        <div className="fixed inset-0 z-[300] flex items-center justify-center px-4"
+                                            onClick={(e) => e.stopPropagation()}>
+                                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                                                onClick={() => setShowMobileNotifications(false)}></div>
+                                            <div className="relative w-full max-w-md max-h-[80vh] bg-white dark:bg-slate-800 
+                                                          rounded-xl shadow-xl overflow-hidden scale-100 opacity-100
+                                                          animate-in fade-in zoom-in duration-200">
+                                                <div className="flex items-center justify-between p-4 border-b 
+                                                              border-slate-200 dark:border-slate-700">
+                                                    <h3 className="font-arabicUI font-semibold text-slate-800 dark:text-white">الاشعارات</h3>
+                                                    <button onClick={() => setShowMobileNotifications(false)}
+                                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                                                        <IoClose className="text-xl text-slate-600 dark:text-slate-300" />
+                                                    </button>
+                                                </div>
+                                                <div className="overflow-y-auto p-4 max-h-[60vh]">
+                                                    {notifications.length > 0 ? (
+                                                        notifications.map((notification) => (
+                                                            <div key={notification.id}
+                                                                className="p-3 mb-2 rounded-lg bg-slate-50 
+                                                                          dark:bg-slate-700/50 text-slate-800 dark:text-slate-200">
+                                                                <p className="font-arabicUI">{notification.message}</p>
+                                                                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+                                                                    {new Date(notification.updatedAt).toLocaleString('ar-EG')}
+                                                                </span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-center text-slate-500 dark:text-slate-400 font-arabicUI py-8">
+                                                            لا توجد اشعارات
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="px-4 py-2">
+                                        <UserButton afterSignOutUrl="/" />
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
