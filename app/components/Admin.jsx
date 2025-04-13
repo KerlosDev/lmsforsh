@@ -32,7 +32,13 @@ const Admin = () => {
     const [selectedCourse, setSelectedCourse] = useState('');
     const [courses, setCourses] = useState([]);
     const [manualEmail, setManualEmail] = useState('');
-    const [activeSection, setActiveSection] = useState('students'); // Default to students instead of using localStorage
+    const [activeSection, setActiveSection] = useState('students');
+    const [analyticsData, setAnalyticsData] = useState([]);
+    const [monthlyStats, setMonthlyStats] = useState({
+        total: 0,
+        active: 0,
+        pending: 0
+    });
 
     // Replace localStorage initialization with useEffect
     useEffect(() => {
