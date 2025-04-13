@@ -85,7 +85,7 @@ const ExamResults = () => {
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 font-arabicUI3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Chart Section */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">

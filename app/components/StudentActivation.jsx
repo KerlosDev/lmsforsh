@@ -320,7 +320,7 @@ const StudentActivation = () => {
     };
 
     return (
-        <div className="space-y-4 lg:space-y-6 p-2 lg:p-0" dir="rtl">
+        <div className="space-y-4  font-arabicUI3 lg:space-y-6 p-2 lg:p-0" dir="rtl">
             {/* Navigation Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2">
                 {[
@@ -350,7 +350,7 @@ const StudentActivation = () => {
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h3 className="text-white/80 text-sm">الإيرادات</h3>
-                                <p className="text-3xl font-bold text-white mt-1">
+                                <p className="text-3xl font-arabicUI3 text-white mt-1">
                                     {calculateMetrics.totalRevenue.toLocaleString('ar-EG')} ج.م
                                 </p>
                             </div>
@@ -365,7 +365,7 @@ const StudentActivation = () => {
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h3 className="text-white/80 text-sm">معدل النمو الشهري</h3>
-                                <p className="text-3xl font-bold text-white mt-1">
+                                <p className="text-3xl font-arabicUI3 text-white mt-1">
                                     {calculateMetrics.growthRate > 0 ? '+' : ''}{calculateMetrics.growthRate}٪
                                 </p>
                             </div>
@@ -415,7 +415,7 @@ const StudentActivation = () => {
                                 ].map((item, index) => (
                                     <div key={index} className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                                         <span className="text-white/70">{item.label}</span>
-                                        <span className="text-white font-bold">{item.value}</span>
+                                        <span className="text-white font-arabicUI3">{item.value}</span>
                                     </div>
                                 ))}
                             </div>
@@ -454,7 +454,7 @@ const StudentActivation = () => {
                         </div>
                         <div>
                             <h3 className="text-white/80 font-arabicUI3 text-sm">إجمالي الطلبات</h3>
-                            <p className="text-2xl font-bold text-white">{activations.length}</p>
+                            <p className="text-2xl font-arabicUI3 text-white">{activations.length}</p>
                         </div>
                     </div>
                 </div>
@@ -465,7 +465,7 @@ const StudentActivation = () => {
                         </div>
                         <div>
                             <h3 className="text-yellow-500/80 font-arabicUI3 text-sm">قيد الانتظار</h3>
-                            <p className="text-2xl font-bold text-yellow-500">
+                            <p className="text-2xl font-arabicUI3 text-yellow-500">
                                 {activations.filter(a => a.status === 'pending').length}
                             </p>
                         </div>
@@ -478,7 +478,7 @@ const StudentActivation = () => {
                         </div>
                         <div>
                             <h3 className="text-green-500/80 font-arabicUI3 text-sm">تم التفعيل</h3>
-                            <p className="text-2xl font-bold text-green-500">
+                            <p className="text-2xl font-arabicUI3 text-green-500">
                                 {activations.filter(a => a.status === 'approved').length}
                             </p>
                         </div>
@@ -491,7 +491,7 @@ const StudentActivation = () => {
                         </div>
                         <div>
                             <h3 className="text-red-500/80 font-arabicUI3 text-sm">مرفوض</h3>
-                            <p className="text-2xl font-bold text-red-500">
+                            <p className="text-2xl font-arabicUI3 text-red-500">
                                 {activations.filter(a => a.status === 'rejected').length}
                             </p>
                         </div>
@@ -699,7 +699,7 @@ const StudentActivation = () => {
                                             <p className="text-white/60 text-sm">{activation.userName}</p>
                                         </div>
                                     </td>
-                                    <td className="p-4 text-white/80 font-mono">{activation.phoneNumber}</td>
+                                    <td className="p-4 text-white/80 font-arabicUI3">{activation.phoneNumber}</td>
                                     <td className="p-4">
                                         <span className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-lg">
                                             {activation.courseName}
