@@ -1060,6 +1060,25 @@ const getQuizById = async (quizId) => {
   return result;
 };
 
+const deleteActivation = async (activationId) => {
+  try {
+    const result = await client.query({
+      query: gql`
+        mutation DeleteActivation($id: ID!) {
+          deleteActivation(id: $id)
+        }
+      `,
+      variables: {
+        id: activationId
+      }
+    });
+    return result.data;
+  } catch (error) {
+    console.error('Error deleting activation:', error);
+    throw error;
+  }
+};
+
 export default {
   getOffer,
   addQuiz,
@@ -1102,5 +1121,6 @@ export default {
   updateExamOrder,
   updateCourseExams,
   updateOffer,
-  getQuizById
+  getQuizById,
+  deleteActivation
 }

@@ -234,9 +234,27 @@ const StudentActivation = () => {
     const handleManualActivation = async (e) => {
         e.preventDefault();
         try {
+            // Validate email format and no spaces
+            if (newActivation.userEmail.includes(' ')) {
+                toast.error('البريد الإلكتروني لا يجب أن يحتوي على مسافات');
+                return;
+            }
+
             const selectedCourse = courses.find(c => c.nicknameforcourse === newActivation.courseId);
             if (!selectedCourse || !newActivation.userEmail || !newActivation.phoneNumber) {
                 toast.error('يرجى ملء جميع البيانات المطلوبة');
+                return;
+            }
+
+            // Check for existing activation with same email and course
+            const existingActivation = activations.find(
+                activation =>
+                    activation.userEmail.toLowerCase() === newActivation.userEmail.toLowerCase() &&
+                    activation.courseId === selectedCourse.nicknameforcourse
+            );
+
+            if (existingActivation) {
+                toast.error('هذا الطالب مسجل بالفعل في هذا الكورس');
                 return;
             }
 
@@ -716,9 +734,19 @@ const StudentActivation = () => {
                                     type="email"
                                     placeholder="البريد الإلكتروني"
                                     value={newActivation.userEmail || ''}    // Added || '' to prevent undefined
-                                    onChange={(e) => setNewActivation({ ...newActivation, userEmail: e.target.value })}
+                                    onChange={(e) => {
+                                        const email = e.target.value.trim(); // Remove any spaces
+                                        setNewActivation({ ...newActivation, userEmail: email });
+                                    }}
+                                    onBlur={(e) => {
+                                        const email = e.target.value.trim();
+                                        if (email.includes(' ')) {
+                                            toast.error('البريد الإلكتروني لا يجب أن يحتوي على مسافات');
+                                        }
+                                    }}
                                     className="w-full bg-white/10 text-white px-4 py-3 rounded-xl outline-none border border-white/10 focus:border-blue-500/50 transition-all duration-300"
                                     required
+                                    pattern="[^ @]*@[^ @]*" // HTML5 pattern to prevent spaces
                                 />
                             </div>
                             <div className="relative">
