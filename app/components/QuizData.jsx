@@ -48,27 +48,19 @@ const QuizData = ({ params }) => {
 
     const loadQuizData = async () => {
         try {
-            const data = await GlobalApi.getQuizDataWithEnroll(
-                user.primaryEmailAddress.emailAddress,
-                quizid
-            );
+            const data = await GlobalApi.getQuizById(quizid);
 
-            // Find the enrollment that has the exam
-            const enrollWithExam = data.userEnrolls.find(enroll =>
-                enroll.course.exam.some(exam => exam.title)
-            );
-
-            if (!enrollWithExam) {
+            if (!data || !data.exam) {
                 throw new Error('لا يمكن الوصول إلى هذا الاختبار');
             }
 
-            const examData = enrollWithExam.course.exam[0];
+            const examData = data.exam;
             const parsedQuiz = JSON.parse(examData.jsonexam);
 
             setQuiz({
                 ...parsedQuiz,
-                id: quizid,
-                title: examData.title
+                id: examData.id,
+                title: parsedQuiz.title || 'اختبار كيمياء'
             });
 
             // Set timer - 2 minutes per question

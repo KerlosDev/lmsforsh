@@ -995,6 +995,19 @@ const updateOffer = async (offerData) => {
   }
 };
 
+const getQuizById = async (quizId) => {
+  const query = `
+  query MyQuery {
+      exam(where: {id: "${quizId}"}) {
+          id
+          jsonexam
+      }
+  }`;
+
+  const result = await request(MASTER_URL, query);
+  return result;
+};
+
 export default {
   getOffer,
   addQuiz,
@@ -1034,4 +1047,5 @@ export default {
   updateExamOrder,
   updateCourseExams,
   updateOffer,
+  getQuizById
 }
