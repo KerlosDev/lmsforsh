@@ -259,21 +259,73 @@ const publishEnrolls = async () => {
 }
 
 const getNotifications = async () => {
-  try {
-    const query = gql`
-      query MyQuery {
-        notifictions {
-          message
-          updatedAt
+  const query = gql`
+    query GetNotifications {
+      notifictions {
+        id
+        message
+        updatedAt
+      }
+    }
+  `;
+
+  const result = await request(MASTER_URL, query);
+  return { notifications: result.notifictions || [] };
+};
+
+const createNotification = async (notification) => {
+  const mutation = gql`
+    mutation CreateNotification {
+      createNotifiction(
+        data: {
+          message: "${notification.message}"
+        }
+      ) {
+        id
+      }
+      publishManyNotifictionsConnection {
+        edges {
+          node {
+            id
+          }
         }
       }
-    `;
-    const result = await request(MASTER_URL, query);
-    return { notifictions: result.notifictions }; // Restructure the response
-  } catch (error) {
-    console.error("GraphQL Query Error:", error);
-    return { notifictions: [] };
-  }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
+const updateNotification = async (id, notification) => {
+  const mutation = gql`
+    mutation UpdateNotification {
+      updateNotifiction(
+        where: { id: "${id}" }
+        data: {
+          message: "${notification.message}"
+        }
+      ) {
+        id
+      }
+      publishNotifiction(where: { id: "${id}" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
+const deleteNotification = async (id) => {
+  const mutation = gql`
+    mutation DeleteNotification {
+      deleteNotifiction(where: { id: "${id}" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
 };
 
 const sendEnroll4Admin = async (courseid, email) => {
@@ -1013,6 +1065,9 @@ export default {
   addQuiz,
   sendquiz,
   getNotifications,
+  createNotification,
+  updateNotification,
+  deleteNotification,
   sendExamData,
   sendEnroll4Admin,
   getAllCourseList,

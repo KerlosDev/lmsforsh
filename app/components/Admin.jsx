@@ -5,15 +5,17 @@ import AdminContent from './AdminContent';
 import { BsPatchCheckFill } from "react-icons/bs";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaUsers, FaBook, FaQuestionCircle, FaList, FaChartPie, FaTag } from "react-icons/fa";
+import { FaUsers, FaBook, FaQuestionCircle, FaList, FaChartPie, FaTag, FaBell } from "react-icons/fa";
+import { RiMenu4Fill } from "react-icons/ri";
 import AnalyticsGraph from './AnalyticsGraph';
 import QuizManager from './QuizManager';
 import ExamList from './ExamList';
 import ExamResults from './ExamResults';
 import StudentActivation from './StudentActivation';
 import CourseManager from './CourseManager';
+import { IoClose } from "react-icons/io5";
+import NotificationManager from './NotificationManager';
 import EditOfferComponent from './EditOfferComponent';
-
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
     const [email, setEmail] = useState('');
@@ -39,7 +41,7 @@ const Admin = () => {
         active: 0,
         pending: 0
     });
-
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Replace localStorage initialization with useEffect
     useEffect(() => {
         const savedSection = localStorage.getItem('adminActiveSection');
@@ -349,9 +351,37 @@ const Admin = () => {
         <ErrorBoundary fallback={<div className="text-white">Something went wrong. Please try again.</div>}>
             <Suspense fallback={<div className="text-white">Loading...</div>}>
                 <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-950">
+                    {/* Mobile Header */}
+                    <div className="md:hidden flex items-center justify-between p-4 bg-white/10 backdrop-blur-lg">
+                        <h2 className="font-arabicUI3 text-xl text-white flex items-center gap-2">
+                            <BsPatchCheckFill className="text-blue-400" />
+                            لوحة الادمن
+                        </h2>
+                        <button
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="p-2 text-white rounded-lg hover:bg-white/10"
+                        >
+                            <RiMenu4Fill className="text-2xl" />
+                        </button>
+                    </div>
+
                     <div className="flex">
                         {/* Sidebar */}
-                        <div className="w-64 min-h-screen bg-white/10 backdrop-blur-lg border-r border-white/20 p-6">
+                        <div className={`fixed inset-y-0 right-0 z-50 w-64 
+                                       md:relative md:translate-x-0
+                                       transform transition-transform duration-300 ease-in-out
+                                       ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+                                       bg-white/10 backdrop-blur-lg border-r border-white/20 p-6`}>
+                            {/* Mobile close button */}
+                            <div className="md:hidden flex justify-end mb-4">
+                                <button
+                                    onClick={() => setIsSidebarOpen(false)}
+                                    className="p-2 text-white rounded-lg hover:bg-white/10"
+                                >
+                                    <IoClose className="text-2xl" />
+                                </button>
+                            </div>
+
                             <div className="mb-8">
                                 <h2 className="font-arabicUI3 text-2xl text-white flex items-center gap-2">
                                     <BsPatchCheckFill className="text-blue-400" />
@@ -436,11 +466,30 @@ const Admin = () => {
                                     <FaTag className="ml-2" />
                                     <span className="font-arabicUI3">إدارة العروض</span>
                                 </button>
+
+                                <button
+                                    onClick={() => setActiveSection('notifications')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'notifications'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaBell className="ml-2" />
+                                    <span className="font-arabicUI3">الإشعارات</span>
+                                </button>
                             </nav>
                         </div>
 
+                        {/* Backdrop for mobile */}
+                        {isSidebarOpen && (
+                            <div
+                                className="fixed inset-0 bg-black/50 backdrop-blur-sm md:hidden z-40"
+                                onClick={() => setIsSidebarOpen(false)}
+                            />
+                        )}
+
                         {/* Main Content */}
-                        <div className="flex-1 p-6">
+                        <div className="flex-1 p-4 md:p-6 w-full overflow-x-hidden">
                             {activeSection === 'students' ? (
                                 <div className="max-w-7xl mx-auto space-y-6">
                                     {/* Stats Row */}
@@ -482,6 +531,8 @@ const Admin = () => {
                                 <StudentActivation />
                             ) : activeSection === 'offers' ? (
                                 <EditOfferComponent />
+                            ) : activeSection === 'notifications' ? (
+                                <NotificationManager />
                             ) : null}
                         </div>
                     </div>

@@ -39,9 +39,11 @@ const NotificationButton = () => {
     const fetchNotifications = async () => {
         try {
             const response = await GlobalApi.getNotifications();
-            if (response?.notifictions) {
-                const notifArray = response.notifictions.map(n => ({
-                    ...n,
+            if (response?.notifications) {
+                const notifArray = response.notifications.map(n => ({
+                    id: n.id,
+                    message: n.message,
+                    updatedAt: n.updatedAt,
                     isRead: new Date(n.updatedAt) <= new Date(lastReadTime)
                 }));
                 setNotifications(notifArray);
@@ -96,10 +98,10 @@ const NotificationButton = () => {
                     </div>
 
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                        {notifications.length > 0 ? (
-                            notifications.map((notification, index) => (
+                        {notifications && notifications.length > 0 ? (
+                            notifications.map((notification) => (
                                 <div
-                                    key={index}
+                                    key={notification.id}
                                     className={`p-4 transition-colors duration-200
                                               ${!notification.isRead
                                             ? 'bg-blue-50 dark:bg-blue-900/20'
