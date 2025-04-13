@@ -1,0 +1,37 @@
+/* ...existing styles... */
+
+@keyframes shine {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+.skeleton-shine {
+    transform: translateX(-100%);
+    animation: shine 1.5s infinite;
+}
+
+/* Add some nice transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+/* Gradient animations */
+.animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}

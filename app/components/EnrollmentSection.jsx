@@ -2,94 +2,133 @@
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react'
-import { FaBookOpenReader } from "react-icons/fa6";
+import { FaLock, FaUnlock, FaGraduationCap, FaPlay } from "react-icons/fa";
+import { BsLightningChargeFill } from "react-icons/bs";
 import GlobalApi from '../api/GlobalApi';
-import { BsPatchCheckFill } from "react-icons/bs";
-import { GiClick } from 'react-icons/gi';
+import { toast } from 'react-toastify';
 
+const EnrollmentSection = ({ courseInfo, isCourseFound }) => {
+    const { user } = useUser();
+    const [loading, setLoading] = useState(false);
+    const [enrolled, setEnrolled] = useState(isCourseFound);
 
+    const handleFreeEnrollment = async () => {
+        if (!user) {
+            toast.error('يرجى تسجيل الدخول أولاً');
+            return;
+        }
 
-const EnrollmentSection = ({ courseInfo }) => {
+        setLoading(true);
+        try {
+            const result = await GlobalApi.autoEnrollFree(
+                courseInfo.nicknameforcourse,
+                user.primaryEmailAddress.emailAddress
+            );
 
-    const { user } = useUser()
-    const [EnrollDAta, setEnrollData] = useState([])
+            if (result?.createUserEnroll?.id) {
+                setEnrolled(true);
+                toast.success('تم التسجيل في الكورس بنجاح');
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('حدث خطأ في التسجيل');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    useEffect(() => {
-        user?.primaryEmailAddress?.emailAddress && EnrooolUser(user?.primaryEmailAddress?.emailAddress)
-    }, [user?.primaryEmailAddress?.emailAddress])
-
-    const EnrooolUser = () => {
-        GlobalApi.EnrollmentUsers(user?.primaryEmailAddress?.emailAddress).then(res => {
-
-            setEnrollData(res.userEnrolls)
-        })
+    if (courseInfo.isfree) {
+        return (
+            <div className="bg-gray-800/50 rounded-xl p-6 backdrop-blur-sm">
+                <div className="space-y-6">
+                    <div className="text-center">
+                        <span className="inline-flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-full">
+                            <FaUnlock className="text-green-400" />
+                            <span className="text-green-400 font-medium">كورس مجاني</span>
+                        </span>
+                    </div>
+                    {!user ? (
+                        <Link href="/sign-in" className="block">
+                            <button className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 
+                                transition flex items-center justify-center gap-2">
+                                <span>تسجيل دخول للمشاهدة</span>
+                                <FaLock />
+                            </button>
+                        </Link>
+                    ) : enrolled ? (
+                        <div className="text-center">
+                            <button className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg p-4 
+                                transition flex items-center justify-center gap-2">
+                                <span>شاهد المحتوى</span>
+                                <FaPlay className="text-sm" />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleFreeEnrollment}
+                            disabled={loading}
+                            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-600 
+                                text-white rounded-lg p-4 transition flex items-center justify-center gap-2"
+                        >
+                            <span>{loading ? 'جاري التسجيل...' : 'ابدأ التعلم مجاناً'}</span>
+                            <FaGraduationCap />
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
     }
 
-
-
-    const filteredcourse = EnrollDAta.filter(item => item?.course?.nicknameforcourse === courseInfo.nicknameforcourse)
-
-
-    const isCourseFound = filteredcourse.length > 0;
-
     return (
-        <div>
-            {courseInfo.isfree ?
-                (<div className={`   h-fit max-sm:w-fit  bg-gradient-to-tr shadow-2xl max-sm:mx-0 p-5 m-5 from-green-400 to-green-500 rounded-2xl `}>
-
-                    <h2 className='  flex justify-center m-auto  font-arabicUI3 bg-white p-5 text-green-500/90 rounded-2xl text-5xl'> انضم دلوقتي </h2>
-
-                    <h4 className=' text-white m-auto flex justify-center text-4xl my-4 '>الكورس مجاني</h4>
-
-
-                </div>) :
-
-                (
-                    <div className={`   h-fit max-sm:w-full  bg-gradient-to-tr shadow-2xl max-sm:mx-0 p-5 m-5 from-green-400 to-green-500 rounded-2xl `}>
-
-                        {user ? (
-                            isCourseFound ? (
-                                <h2 className=' text-white drop-shadow-2xl cursor-default flex justify-center text-2xl text-center m-auto  font-arabicUI3 md:text-4xl'>
-                                    <span className=' p-6 rounded-2xl text-green-500 block w-full bg-white m-auto text-center'>
-                                        {isCourseFound ? <span className=' flex gap-5'><BsPatchCheckFill />تم الاشتراك</span> : "  اشترك دلوقتي"}
-                                    </span>
-                                </h2>
-                            ) : (<Link href={`/payment/${courseInfo.nicknameforcourse}`} >
-                                <h2 className=' text-white flex drop-shadow-2xl justify-center   text-2xl text-center m-auto  font-arabicUI3 md:text-4xl'>
-                                    <span className=' p-6 rounded-2xl text-green-500  block w-full bg-white m-auto text-center'>
-                                        {isCourseFound ? <span className=' flex gap-5'><BsPatchCheckFill />تم الاشتراك</span> : "  اشترك دلوقتي"}
-                                    </span>
-                                </h2>
-                            </Link>)
-
-                        ) : (
-
-                            <Link href='/sign-in' >
-                                <h2 className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl'>
-                                        <span className='  p-6 rounded-2xl text-green-500 flex place-items-center gap-3 mx-auto justify-center hover:bg-green-200 transition duration-300 hover:text-green-700  w-full bg-white m-auto text-center '>اشترك دلوقتي <GiClick></GiClick>
-                                        </span>
-                                </h2>
-                            </Link>
-                        )}
-
-
-
-
-                        {!isCourseFound && (
-                            <h2 dir='rtl' className=' text-white flex justify-center m-auto  font-arabicUI3 text-3xl my-5'>
-
-                                بــ {courseInfo.price} جنيه
-                            </h2>
-
-                        )}
-
-
-
-                    </div>
-                )
-            }
+        <div className="bg-gray-800/50 rounded-xl p-6 backdrop-blur-sm">
+            <div className="space-y-6">
+                {user ? (
+                    isCourseFound ? (
+                        <div className="space-y-4 text-center">
+                            <div className="inline-flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-full">
+                                <BsLightningChargeFill className="text-green-400" />
+                                <span className="text-green-400 font-medium">تم تفعيل الكورس</span>
+                            </div>
+                            <button className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg p-4 
+                                             transition flex items-center justify-center gap-2">
+                                <span>شاهد المحتوى</span>
+                                <FaPlay className="text-sm" />
+                            </button>
+                        </div>
+                    ) : (
+                        <Link href={`/payment/${courseInfo.nicknameforcourse}`} className="block">
+                            <div className="space-y-4">
+                                <div className="text-center">
+                                    <h3 className="text-3xl font-bold text-white mb-1">{courseInfo.price} جنيه</h3>
+                                    <p className="text-gray-400">اشتراك لمرة واحدة</p>
+                                </div>
+                                <button className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-4 
+                                                 transition flex items-center justify-center gap-2">
+                                    <span>اشترك الآن</span>
+                                    <BsLightningChargeFill />
+                                </button>
+                            </div>
+                        </Link>
+                    )
+                ) : (
+                    <Link href="/sign-in" className="block">
+                        <div className="space-y-4">
+                            <div className="text-center">
+                                <h3 className="text-3xl font-bold text-white mb-1">{courseInfo.price} جنيه</h3>
+                                <p className="text-gray-400">سجل دخول للاشتراك</p>
+                            </div>
+                            <button className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 
+                                             transition flex items-center justify-center gap-2">
+                                <span>تسجيل دخول</span>
+                                <FaLock />
+                            </button>
+                        </div>
+                    </Link>
+                )}
+            </div>
         </div>
-    )
+    );
 }
 
-export default EnrollmentSection
+export default EnrollmentSection;

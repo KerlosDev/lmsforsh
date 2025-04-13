@@ -1,10 +1,18 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import GlobalApi from '../api/GlobalApi';
 import AdminContent from './AdminContent';
 import { BsPatchCheckFill } from "react-icons/bs";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FaUsers, FaBook, FaQuestionCircle, FaList, FaChartPie, FaTag } from "react-icons/fa";
+import AnalyticsGraph from './AnalyticsGraph';
+import QuizManager from './QuizManager';
+import ExamList from './ExamList';
+import ExamResults from './ExamResults';
+import StudentActivation from './StudentActivation';
+import CourseManager from './CourseManager';
+import EditOfferComponent from './EditOfferComponent';
 
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
@@ -24,7 +32,17 @@ const Admin = () => {
     const [selectedCourse, setSelectedCourse] = useState('');
     const [courses, setCourses] = useState([]);
     const [manualEmail, setManualEmail] = useState('');
-    
+    const [activeSection, setActiveSection] = useState(() => {
+        // Get saved section from localStorage or default to 'students'
+        return localStorage.getItem('adminActiveSection') || 'students'
+    });
+    const [analyticsData, setAnalyticsData] = useState([]);
+    const [monthlyStats, setMonthlyStats] = useState({
+        total: 0,
+        active: 0,
+        pending: 0
+    });
+
     const emailsPerPage = 5; // Emails to show per page
 
     const updateStateoOfSub = () => {
@@ -66,16 +84,94 @@ const Admin = () => {
         dataAdmin();
     }, []);
 
+    const processActivationData = (activations) => {
+        if (!Array.isArray(activations)) return {
+            graphData: [],
+            stats: { total: 0, approved: 0, pending: 0, revenue: 0 }
+        };
+
+        // Group activations by course
+        const courseStats = activations.reduce((acc, activation) => {
+            const courseId = activation.courseId;
+            if (!acc[courseId]) {
+                acc[courseId] = {
+                    total: 0,
+                    approved: 0,
+                    revenue: 0,
+                    name: activation.courseName
+                };
+            }
+
+            acc[courseId].total++;
+            if (activation.status === 'approved') {
+                acc[courseId].approved++;
+                acc[courseId].revenue += activation.price || 0;
+            }
+
+            return acc;
+        }, {});
+
+        return {
+            graphData: Object.values(courseStats).map(stats => ({
+                name: stats.name || 'Unknown Course',
+                total: stats.total,
+                active: stats.approved,
+                revenue: stats.revenue
+            })),
+            stats: {
+                total: activations.length,
+                approved: activations.filter(a => a.status === 'approved').length,
+                pending: activations.filter(a => a.status === 'pending').length,
+                revenue: activations.reduce((sum, a) => a.status === 'approved' ? sum + (a.price || 0) : sum, 0)
+            }
+        };
+    };
+
     const dataAdmin = async () => {
-        const res = await GlobalApi.data4admin();
-        setnumOFStu(res.userEnrolls);
+        try {
+            const activationResult = await GlobalApi.getActivationData();
+            const activations = JSON.parse(activationResult.actvition?.activit || '[]');
+
+            // Extract unique student emails first
+            const uniqueStudents = [...new Set(activations
+                .filter(a => a.userEmail) // Filter out entries without email
+                .map(a => a.userEmail))];
+            setnumOFStu(uniqueStudents);
+
+            const analytics = processActivationData(activations);
+            setAnalyticsData(analytics.graphData);
+            setMonthlyStats({
+                total: analytics.stats.total,
+                active: analytics.stats.approved,
+                pending: analytics.stats.pending
+            });
+
+        } catch (error) {
+            console.error('Error fetching activation data:', error);
+            setnumOFStu([]); // Set empty array on error
+            setAnalyticsData([]);
+            setMonthlyStats({
+                total: 0,
+                active: 0,
+                pending: 0
+            });
+        }
     };
 
     const uniqueEmails = [...new Set(numOfStu?.map((item) => item.userEmail))].reverse();
 
-    const filteredEmails = uniqueEmails.filter((email) =>
-        email.toLowerCase().includes(searchEmail.toLowerCase())
-    );
+    // Update the email filtering logic with proper checks
+    const filteredEmails = uniqueEmails?.filter((email) => {
+        if (!email || !searchEmail) return true;
+        return email.toLowerCase().includes((searchEmail || '').toLowerCase());
+    }) || [];
+
+    // Add null check for pagination calculations
+    const totalPages = Math.ceil((filteredEmails?.length || 0) / emailsPerPage);
+    const paginatedEmails = filteredEmails?.slice(
+        (currentPage - 1) * emailsPerPage,
+        currentPage * emailsPerPage
+    ) || [];
 
     useEffect(() => {
         if (numOfStu.length > 0 && email) {
@@ -111,12 +207,6 @@ const Admin = () => {
 
         return aggregatedData;
     }
-
-    const totalPages = Math.ceil(filteredEmails.length / emailsPerPage); // Calculate total pages
-    const paginatedEmails = filteredEmails.slice(
-        (currentPage - 1) * emailsPerPage,
-        currentPage * emailsPerPage
-    )
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
@@ -181,27 +271,46 @@ const Admin = () => {
 
     const handleConfirmAddStudent = async () => {
         if (selectedCourse && manualEmail) {
-            await GlobalApi.sendEnroll4Admin(selectedCourse, manualEmail);
-            await dataAdmin(); // Refresh data after adding student
-            setShowCourseDialog(false);
-            setSelectedCourse('');
-            setManualEmail('');
-          
-            toast.success(' تم اضافة الطالب بنجاح ✅', {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "colored",
-                
-                className: ' font-arabicUI2 m-4 p-4 ',
-                
-                
-            });
-            
+            const selectedCourseData = courses.find(c => c.nicknameforcourse === selectedCourse);
+            const enrollmentData = [{
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 10)}`,
+                timestamp: new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)).toISOString(),
+                enrollmentId: Math.random().toString(36).substr(2, 24),
+                userEmail: manualEmail,
+                userName: "Nothing",
+                phoneNumber: "4684677978",
+                courseName: selectedCourseData?.nameofcourse || '',
+                courseId: selectedCourseData?.nicknameforcourse || 'elements',
+                price: 50,
+                status: "approved" // Changed to approved instead of pending
+            }];
+
+            const formattedData = JSON.stringify(enrollmentData);
+
+            try {
+                await GlobalApi.sendEnroll4Admin(selectedCourse, manualEmail, formattedData);
+                // Automatically set the enrollment as active
+                await GlobalApi.editStateSub(enrollmentData[0].enrollmentId, true);
+
+                await dataAdmin();
+                setShowCourseDialog(false);
+                setSelectedCourse('');
+                setManualEmail('');
+
+                toast.success('تم اضافة وتفعيل الطالب بنجاح ✅', {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "colored",
+                    className: 'font-arabicUI2 م-4 p-4',
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                toast.error('حدث خطأ أثناء إضافة الطالب');
+            }
         }
     };
 
@@ -214,98 +323,156 @@ const Admin = () => {
         fetchCourses();
     }, []);
 
+    // Add effect to save activeSection changes
+    useEffect(() => {
+        localStorage.setItem('adminActiveSection', activeSection);
+    }, [activeSection]);
+
     return (
-        <div className="select-none rounded-2xl mt-8 bg-admin-imag bg-cover bg-center  m-5">
-            <div className=' p-6'>
-                <h2 className="font-arabicUI3 pt-10 max-sm:text-3xl text-white text-5xl p-5 gap-4 m-auto flex justify-center">
-                    <BsPatchCheckFill className=' scale-90'></BsPatchCheckFill>
-                    لوحة الادمن
-                </h2>
-            </div>
+        <ErrorBoundary fallback={<div className="text-white">Something went wrong. Please try again.</div>}>
+            <Suspense fallback={<div className="text-white">Loading...</div>}>
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-950">
+                    <div className="flex">
+                        {/* Sidebar */}
+                        <div className="w-64 min-h-screen bg-white/10 backdrop-blur-lg border-r border-white/20 p-6">
+                            <div className="mb-8">
+                                <h2 className="font-arabicUI3 text-2xl text-white flex items-center gap-2">
+                                    <BsPatchCheckFill className="text-blue-400" />
+                                    لوحة الادمن
+                                </h2>
+                            </div>
 
+                            <nav className="space-y-4">
+                                <button
+                                    onClick={() => setActiveSection('students')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'students'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaUsers className="ml-2" />
+                                    <span className="font-arabicUI3">جميع الطلاب</span>
+                                </button>
 
-            <div className="grid gap-5 p-1 backdrop-filter rtl-grid max-sm:grid-cols-1 grid-cols-5">
-                {/* Number of Students */}
-                <div className="border-4 rounded-xl h-fit mx-auto m-4">
-                    <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl  text-5xl text-white">
-                        عدد الطلاب المشتركين فكورسات
-                    </h3>
-                    <h3 className="p-2 text-center font-arabicUI3 flex justify-between text-6xl text-blue-950 bg-white m-4 rounded-xl">
-                        <span className="m-auto">{uniqueEmails.length}</span><span>طالب</span>
-                    </h3>
-                </div>
-                <div className="border-4 rounded-xl col-span-2 m-4">
-                    <h3 className="p-2 text-center font-arabicUI3 leading-normal max-sm:text-2xl text-5xl text-white">
-                        ايميلات الطلاب المشتركين فكورسات
-                    </h3>
-                    <input
-                        value={searchEmail}
-                        onChange={(e) => setSearchEmail(e.target.value)}
-                        type="text"
-                        placeholder="بحث بالايميل.."
-                        className="text-left p-2 text-4xl max-sm:text-2xl w-4/5 flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
-                    />
-                    {paginatedEmails.map((item, index) => (
-                        <h3
-                            onClick={() => handleSelectEmail(item, index)}
-                            key={index}
-                            className={`${activeEmail === index
-                                ? 'bg-green-500 text-white'
-                                : 'text-blue-950 bg-white'
-                                } cursor-pointer duration-300 max-sm:text-sm text-right p-2 transition justify-end font-arabicUI3 flex text-4xl m-4 rounded-xl`}
-                        >
-                            <span className="m-auto">{item}</span>
-                        </h3>
-                    ))}
-                    <div className="flex justify-center mt-5">
-                        <button
-                            onClick={handlePreviousPage}
-                            disabled={currentPage === 1}
-                            className="px-5 py-2 bg-blue-500 max-sm:text-lg max-sm:p-2  text-white rounded-2xl font-arabicUI3 text-4xl m-2 disabled:opacity-50"
-                        >
-                            السابق
-                        </button>
-                        <button
-                            onClick={handleNextPage}
-                            disabled={currentPage === totalPages}
-                            className="px-5 py-2 bg-blue-500 max-sm:text-lg max-sm:p-2 text-white rounded-2xl font-arabicUI3 text-4xl m-2 disabled:opacity-50"
-                        >
-                            التالي
-                        </button>
-                    </div>
-                </div>
-                <div className="border-4 rounded-xl col-span-2 m-4 h-fit">
-                    <h3 className="p-2 text-center font-arabicUI3 max-sm:text-xl leading-normal text-5xl text-white">
-                        تفاصيل الاشتراك
-                    </h3>
-                    {email ? (
-                        filteredData.map((item, index) => (
-                            <h3 key={index} onClick={() => { handleActive(index) }}
-                                className={`${item.isHePaid ? "bg-green-500 text-white" : "bg-red-500 text-white"} ${index != activeBar && "cursor-pointer"} max-sm:text-sm transition duration-500 text-right p-2 justify-end font-arabicUI3 text-4xl m-4 rounded-xl`}
-                            >
-                                <div className='flex justify-end transition-transform duration-500'>
-                                    <span className="m-auto">{item.courseid.toUpperCase()}</span>
-                                    <span className="m-auto">{item.dataofSub} </span>
-                                </div>
+                                <button
+                                    onClick={() => setActiveSection('courses')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'courses'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaBook className="ml-2" />
+                                    <span className="font-arabicUI3">جميع الكورسات</span>
+                                </button>
 
-                                {index == activeBar && (
-                                    <div className='transition-transform duration-500'>
-                                        <span onClick={() => handleCourseClick(item)} className="cursor-pointer transition-transform duration-500 m-4 mx-auto flex justify-center bg-blue-950 text-2xl md:text-4xl text-white w-fit p-2 my-4 rounded-2xl">
-                                            {loadingAction ? "جاري التحميل..." : (item.isHePaid ? "الكورس متفعل" : "تفعيل الكورس")}
-                                        </span>
+                                <button
+                                    onClick={() => setActiveSection('quizzes')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'quizzes'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaQuestionCircle className="ml-2" />
+                                    <span className="font-arabicUI3">اضافة  اختبار</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setActiveSection('examList')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'examList'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaList className="ml-2" />
+                                    <span className="font-arabicUI3">قائمة الاختبارات</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setActiveSection('examResults')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'examResults'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaChartPie className="ml-2" />
+                                    <span className="font-arabicUI3">نتائج الاختبارات</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setActiveSection('activation')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'activation'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaUsers className="ml-2" />
+                                    <span className="font-arabicUI3">تفعيل الطلبة</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setActiveSection('offers')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                ${activeSection === 'offers'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaTag className="ml-2" />
+                                    <span className="font-arabicUI3">إدارة العروض</span>
+                                </button>
+                            </nav>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex-1 p-6">
+                            {activeSection === 'students' ? (
+                                <div className="max-w-7xl mx-auto space-y-6">
+                                    {/* Stats Row */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                                            <h3 className="text-white/80 font-arabicUI3 text-lg mb-2">إجمالي الطلاب</h3>
+                                            <p className="text-4xl font-bold text-white">{numOfStu.length}</p>
+                                        </div>
+                                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                                            <h3 className="text-white/80 font-arabicUI3 text-lg mb-2">إجمالي الطلبات</h3>
+                                            <p className="text-4xl font-bold text-white">{monthlyStats.total}</p>
+                                        </div>
+                                        <div className="bg-green-500/10 backdrop-blur-lg rounded-2xl p-6 border border-green-500/20">
+                                            <h3 className="text-green-500 font-arabicUI3 text-lg mb-2">المفعلة</h3>
+                                            <p className="text-4xl font-bold text-green-500">{monthlyStats.active}</p>
+                                        </div>
+                                        <div className="bg-yellow-500/10 backdrop-blur-lg rounded-2xl p-6 border border-yellow-500/20">
+                                            <h3 className="text-yellow-500 font-arabicUI3 text-lg mb-2">في انتظار التفعيل</h3>
+                                            <p className="text-4xl font-bold text-yellow-500">{monthlyStats.pending}</p>
+                                        </div>
                                     </div>
-                                )}
-                            </h3>
-                        ))
-                    ) : (
-                        <h4 className="text-white m-5 font-arabicUI3 text-2xl md:text-6xl text-center leading-relaxed bg-green-400 rounded-xl">
-                            اختار ايميل من فضلك
-                        </h4>
-                    )}
 
+                                    {/* Analytics Graph - Updated to full width */}
+                                    <div className="w-full">
+                                        <AnalyticsGraph data={analyticsData} />
+                                    </div>
+
+
+                                </div>
+                            ) : activeSection === 'courses' ? (
+                                <CourseManager />
+                            ) : activeSection === 'quizzes' ? (
+                                <QuizManager />
+                            ) : activeSection === 'examList' ? (
+                                <ExamList />
+                            ) : activeSection === 'examResults' ? (
+                                <ExamResults />
+                            ) : activeSection === 'activation' ? (
+                                <StudentActivation />
+                            ) : activeSection === 'offers' ? (
+                                <EditOfferComponent />
+                            ) : null}
+                        </div>
+                    </div>
+
+                    {/* Modals - keep existing modal code but update styles */}
                     {showConfirmation && (
                         <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
-                            <div className=" backdrop-blur-2xl m-6 border p-5 rounded-xl text-center">
+                            <div className=" backdrop-blur-2xl م-6 border p-5 rounded-xl text-center">
                                 <h4 className="text-2xl text-white font-arabicUI2 mb-4">هل تريد تغيير حالة الدفع لهذا الكورس؟</h4>
                                 <button onClick={confirmChange} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">نعم</button>
                                 <button onClick={() => setShowConfirmation(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">لا</button>
@@ -313,54 +480,71 @@ const Admin = () => {
                         </div>
                     )}
 
-                </div>
-                <div className="  rounded-xl h-fit ">
-                    <button onClick={handleAddStudent} className=" bg-yellow-500 active:scale-110 ease-in-out transition text-yellow-800 p-3 rounded-xl text-4xl mx-auto flex justify-content-around outline-dashed outline-2 outline-yellow-500  outline-offset-4 hover:cursor-pointer buttonn text-center    font-arabicUI3 leading-normal max-sm:text-2xl ">
-                        اضافة طالب جديد
-                    </button>
+                    {showCourseDialog && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-opacity-50">
+                            <div className="backdrop-blur-2xl م-6 border p-5 rounded-xl text-center">
+                                <h4 className="text-2xl text-white font-arabicUI2 mb-4">اختر الكورس لتفعيله للبريد الإلكتروني:</h4>
+                                <input
+                                    value={manualEmail}
 
-                </div>
-            </div>
+                                    onChange={(e) => setManualEmail(e.target.value.replace(/\s/g, ''))}
+                                    type="text"
+                                    placeholder="ادخل البريد الإلكتروني.."
+                                    className="text-left p-2 text-4xl w-full flex justify-center mx-auto font-arabicUI3 rounded-xl م-5"
+                                />
+                                <select
+                                    value={selectedCourse}
+                                    onChange={(e) => handleCourseSelect(e.target.value)}
+                                    className="text-left p-2 text-2xl w-full flex justify-center mx-auto font-arabicUI3 rounded-xl م-5"
+                                >
+                                    <option value="">اختر الكورس</option>
+                                    {courses.map((course) => (
+                                        <option key={course.id} value={course.nicknameforcourse}>
+                                            {course.nameofcourse}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button onClick={handleConfirmAddStudent} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">
+                                    تأكيد
+                                </button>
+                                <button onClick={() => setShowCourseDialog(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">
+                                    إلغاء
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-            {showCourseDialog && (
-                <div className="fixed inset-0 flex items-center justify-center bg-opacity-50">
-                    <div className="backdrop-blur-2xl m-6 border p-5 rounded-xl text-center">
-                        <h4 className="text-2xl text-white font-arabicUI2 mb-4">اختر الكورس لتفعيله للبريد الإلكتروني:</h4>
-                        <input
-                            value={manualEmail}
+                    <ToastContainer />
 
-                            onChange={(e) => setManualEmail(e.target.value.replace(/\s/g, ''))}
-                            type="text"
-                            placeholder="ادخل البريد الإلكتروني.."
-                            className="text-left p-2 text-4xl w-full flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
-                        />
-                        <select
-                            value={selectedCourse}
-                            onChange={(e) => handleCourseSelect(e.target.value)}
-                            className="text-left p-2 text-2xl w-full flex justify-center mx-auto font-arabicUI3 rounded-xl m-5"
-                        >
-                            <option value="">اختر الكورس</option>
-                            {courses.map((course) => (
-                                <option key={course.id} value={course.nicknameforcourse}>
-                                    {course.nameofcourse}
-                                </option>
-                            ))}
-                        </select>
-                        <button onClick={handleConfirmAddStudent} className="px-4 py-2 bg-green-500 text-white font-arabicUI2 text-4xl rounded-xl mx-2">
-                            تأكيد
-                        </button>
-                        <button onClick={() => setShowCourseDialog(false)} className="px-4 py-2 bg-red-500 font-arabicUI2 text-4xl text-white rounded-xl mx-2">
-                            إلغاء
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <ToastContainer   />
-
-        </div >
+                </div >
+            </Suspense>
+        </ErrorBoundary>
     );
 };
+
+// Create a custom error boundary component
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('Error:', error);
+        console.error('Error Info:', errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+        return this.props.children;
+    }
+}
 
 export default Admin;
 

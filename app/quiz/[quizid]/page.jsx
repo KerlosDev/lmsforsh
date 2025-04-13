@@ -1,5 +1,7 @@
-import QuizData from "@/app/components/QuizData"
+ 
 import React from "react"
+import QuizData from "../../components/QuizData"
+
 
 
 const page = ({ params }) => {

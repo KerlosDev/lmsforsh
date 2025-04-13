@@ -6,10 +6,6 @@ const ArabicUI3 = localFont({ src: './fonts/Rubik.ttf' })
 import { Anton } from 'next/font/google';
 import {
   ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton
 } from '@clerk/nextjs'
 
 

@@ -5,6 +5,7 @@ import Hero from "./components/Hero";
 import Content from "./components/Content";
 import Courses from "./components/Courses";
 import GlobalApi from "./api/GlobalApi";
+import Offer from "./components/Offer";
 
 
 
@@ -22,7 +23,7 @@ export default function Home() {
       <Hero></Hero>
 
  
-      
+      <Offer></Offer>
       <Courses></Courses> 
     </div>
   );

@@ -1,75 +1,169 @@
+'use client';
 import React from 'react';
 import { FaLightbulb } from "react-icons/fa";
-import { GiTakeMyMoney } from "react-icons/gi";
+import { GiTakeMyMoney, GiMolecule, GiChemicalDrop } from "react-icons/gi";
+import { IoMdFlask } from "react-icons/io";
+import { FaAtom, FaFlask, FaMicroscope } from "react-icons/fa";
 
 const Hero = () => {
     return (
-        <div className="select-none relative flex flex-col-reverse lg:flex-row lg:justify-between items-center lg:items-start p-4">
-            {/* Background Image */}
-            <img
-                className="absolute top-0  -z-20 left-60 w-[800px] max-lg:hidden"
-                src='/ch.svg'
-                alt="Background DNA"
-            />
-       
-            
-
-            {/* Image on the Right */}
-            <div className="flex justify-center lg:justify-end w-full lg:w-auto mb-6 lg:mb-0">
-                <img
-                    src="/sha.png"
-                    width={600}
-                    height={200}
-                    className="drop-shadow-2xl  brightness-150 transition hover:scale-105  hidden lg:block"
-                    alt="Shahad Image"
-                />
+        <div className="relative min-h-screen py-8 sm:py-12 px-2 sm:px-4 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-slate-50 
+                        dark:from-blue-950 dark:via-slate-900 dark:to-slate-950">
+            {/* Enhanced Background Elements */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-20 right-10 w-40 h-40 bg-blue-500/10 backdrop-blur-3xl rounded-full 
+                              flex items-center justify-center animate-float">
+                    <GiMolecule className="text-6xl text-blue-500/50 animate-spin-slow" />
+                </div>
+                <div className="absolute top-40 left-20 w-48 h-48 bg-red-500/10 backdrop-blur-3xl rounded-full 
+                              flex items-center justify-center animate-float-delayed">
+                    <FaFlask className="text-7xl text-red-500/50 animate-bounce" />
+                </div>
+                {/* New decorative elements */}
+                <div className="absolute bottom-20 right-1/4 w-32 h-32 bg-yellow-500/10 backdrop-blur-3xl rounded-full 
+                              flex items-center justify-center animate-pulse">
+                    <FaAtom className="text-5xl text-yellow-500/50 animate-spin" />
+                </div>
+                <div className="absolute inset-0 opacity-10 bg-[url('/chemistry-pattern.png')] bg-repeat mix-blend-overlay"></div>
             </div>
 
-            {/* Content Section */}
-            <div className="text-center lg:text-right w-full lg:w-1/2 font-arabicUI3">
-                {/* Main Heading */}
-                <h2 className="leading-normal text-4xl lg:text-6xl text-red-500 flex justify-center lg:justify-end items-center mb-4 lg:mb-10">
-                    .. شهد هاني
-                    <span className="text-slate-950 dark:text-slate-400 ml-2">
-                        <span className="text-4xl">/</span> د
-                    </span>
-                </h2>
+            <div className="max-w-7xl mx-auto">
+                <div className="grid lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-16 items-center">
+                    {/* Image Section - Moved to top for mobile */}
+                    <div className="relative order-1 lg:order-1 -mt-4 sm:mt-0">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-red-500/30 
+                                      rounded-full blur-3xl transform -rotate-6 animate-pulse"></div>
+                        <div className="relative">
+                            <img
+                                src="/sha.png"
+                                className="relative z-10 w-full h-[300px] sm:h-auto max-w-lg mx-auto 
+                                         object-contain sm:object-cover drop-shadow-2xl 
+                                         hover:scale-102 transition-transform duration-300"
+                                alt="Shahad Image"
+                            />
+                        </div>
+                    </div>
 
-                {/* Responsive Image for Smaller Screens */}
-                <img
-                    src="/sha.png"
-                    width={300}
-                    height={100}
-                    className="drop-shadow-2xl brightness-150 lg:hidden mx-auto mb-6"
-                    alt="Shahad Image"
-                />
+                    {/* Content Section - Adjusted for mobile */}
+                    <div className="relative z-10 order-2 lg:order-2 space-y-3 sm:space-y-4 lg:space-y-8 px-2 sm:px-0">
+                        {/* Title Section */}
+                        <div dir='rtl' className="relative">
+                            <div className="bg-white/40  dark:bg-slate-800/40 backdrop-blur-xl 
+                                          p-3 sm:p-4 lg:p-8 rounded-2xl border border-blue-500/20 
+                                          shadow-lg hover:shadow-xl transition-all duration-300">
+                                <div className="flex flex-col items-center sm:flex-row sm:items-center 
+                                              gap-2 sm:gap-3 mb-2 sm:mb-4 lg:mb-6">
+                                    <h2 className="text-2xl sm:text-4xl lg:text-7xl font-arabicUI2 
+                                                 bg-clip-text text-transparent bg-gradient-to-l 
+                                                 from-blue-600 to-blue-400 text-center sm:text-right">
+                                        شهد هاني
+                                    </h2>
+                                    <div className="relative hidden sm:block">
+                                        <FaAtom className="text-4xl text-blue-500 animate-spin-slow" />
+                                    </div>
+                                </div>
+                                <div className="flex justify-center sm:justify-start items-baseline gap-2 
+                                              text-xl sm:text-3xl lg:text-5xl font-arabicUI3 
+                                              text-slate-700 dark:text-slate-300">
+                                    <h3>دكتورة الكيمياء</h3>
+                                </div>
+                            </div>
+                        </div>
 
-                {/* Secondary Heading */}
-                <div>
-                    <h1 className="text-3xl lg:text-5xl dark:text-slate-400 flex justify-center lg:justify-end items-center mb-4">
-                        <span className="text-4xl lg:text-7xl text-red-500 mr-2 lg:mr-3">2025</span>
-                        ترحب بدفعه
-                    </h1>
+                        {/* Rest of the content sections with mobile optimizations */}
+                        <div dir='rtl' className="bg-gradient-to-br from-blue-500/5 to-transparent 
+                                                 p-3 sm:p-4 lg:p-8 rounded-2xl border border-blue-500/20 
+                                                 backdrop-blur-sm">
+                            <div className="absolute -right-10 top-0 w-1 h-full bg-gradient-to-b from-red-500 to-transparent" />
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-arabicUI3 text-slate-800 dark:text-slate-200">
+                                ترحب بدفعة{' '}
+                                <span className="text-4xl sm:text-5xl lg:text-6xl text-red-500 font-bold">2025</span>
+                            </h1>
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-arabicUI3 text-slate-600 dark:text-slate-300">
+                                    منهج الكيمياء الحديث
+                                </h3>
+                                <IoMdFlask className="text-3xl text-blue-500" />
+                            </div>
+                            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
+                                <div className="flex flex-col items-center p-3 bg-blue-500/30 dark:bg-blue-800/30 dark:text-blue-500 rounded-xl">
+                                    <FaMicroscope className="text-2xl text-blue-500 mb-2" />
+                                    <span className="text-sm font-arabicUI3">تجارب عملية</span>
+                                </div>
+                                <div className="flex flex-col items-center p-3 bg-white/30 dark:bg-red-800/30 dark:text-red-500 rounded-xl">
+                                    <GiChemicalDrop className="text-2xl text-red-500 mb-2" />
+                                    <span className="text-sm font-arabicUI3">شرح تفاعلي</span>
+                                </div>
+                                <div className="flex flex-col items-center p-3 bg-white/30 dark:bg-green-800/30 dark:text-green-500 rounded-xl">
+                                    <GiMolecule className="text-2xl text-green-500 mb-2" />
+                                    <span className="text-sm font-arabicUI3">نماذج ثلاثية الأبعاد</span>
+                                </div>
+                            </div>
+                        </div>
 
-                    <h1 className="text-3xl lg:text-5xl dark:text-slate-400 leading-relaxed">
-                        لشرح منهج{' '}
-                        <span className="text-red-600 hover:scale-90 duration-300 ">الكيمياء</span>{' '}
-                    </h1>
-                </div>
+                        {/* Quote and Promotional sections - Hide some decorative elements on mobile */}
+                        <div className="hidden sm:block">
+                            <div dir='rtl' className="relative group px-2 sm:px-4">
+                                {/* Animated background with molecule pattern */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/20 via-red-500/20 to-orange-500/20 
+                                          blur-2xl transform group-hover:scale-105 transition-transform duration-500">
+                                    <div className="absolute inset-0 bg-[url('/chemistry-pattern.png')] bg-repeat opacity-5 mix-blend-overlay"></div>
+                                </div>
 
-                {/* Motivational Quote */}
-                <h3 className=" lg:text-5xl text-2xl text-yellow-500  duration-300 font-rakkas flex justify-center lg:justify-end items-center my-10 whitespace-nowrap">
-                    <FaLightbulb className="mr-2" />
-                    ❝ لو طريقك صعب اعرف ان النهاية حلوة ❞
-                </h3>
+                                {/* Main quote container */}
+                                <div className="relative bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl p-4 sm:p-6 lg:p-8 
+                                          rounded-2xl border-2 border-yellow-500/30 shadow-lg group-hover:shadow-2xl 
+                                          transition-all duration-500">
+                                    {/* Decorative elements */}
+                                    <div className="absolute -top-3 -right-3">
+                                        <div className="relative">
+                                            <FaAtom className="text-3xl text-yellow-500 animate-spin-slow" />
+                                            <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-xl"></div>
+                                        </div>
+                                    </div>
+                                    <div className="absolute -bottom-3 -left-3">
+                                        <div className="relative">
+                                            <GiMolecule className="text-3xl text-red-500 animate-pulse" />
+                                            <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl"></div>
+                                        </div>
+                                    </div>
 
-                {/* Promotional Section */}
-                <div className="flex justify-center lg:justify-end">
-                    <div className="shadow-2xl shadow-yellow-400 rounded-xl bg-yellow-400 bg-paton bg-cover p-4">
-                        <h2 className="text-xl lg:text-4xl text-slate-950 flex items-center">
-                            <GiTakeMyMoney className="text-2xl lg:text-5xl mr-2" />
-                            خصم علي كورس العضوية الان
-                        </h2>
+                                    {/* Quote content */}
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 lg:gap-6">
+                                        <div className="flex-1 space-y-2 sm:space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <FaLightbulb className="text-4xl text-yellow-500" />
+                                                <h3 className="text-xl font-arabicUI2 text-yellow-600 dark:text-yellow-400">
+                                                    نصيحة اليوم
+                                                </h3>
+                                            </div>
+                                            <p className="text-xl sm:text-2xl font-rakkas text-slate-700 dark:text-slate-200 leading-relaxed">
+                                                ❝ لو طريقك صعب اعرف ان النهاية حلوة ❞
+                                            </p>
+                                        </div>
+
+                                        {/* Decorative flask with bubbles */}
+                                        <div className="relative hidden md:block">
+                                            <div className="relative bg-gradient-to-b from-yellow-500/20 to-red-500/20 
+                                                      p-4 rounded-full border border-yellow-500/30">
+                                                <IoMdFlask className="text-5xl text-yellow-500" />
+                                                {/* Animated bubbles */}
+                                                <div className="absolute inset-0 overflow-hidden">
+                                                    <div className="absolute bottom-2 left-1/4 w-1.5 h-1.5 bg-yellow-500/50 
+                                                              rounded-full animate-float"></div>
+                                                    <div className="absolute bottom-4 left-1/2 w-2 h-2 bg-red-500/50 
+                                                              rounded-full animate-float-delayed"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        {/* Promotional Banner - Enhanced for all screens */}
+                     
                     </div>
                 </div>
             </div>

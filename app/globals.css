@@ -62,10 +62,255 @@
 
 .rtl-grid {
     direction: rtl;
-  }
+}
 
-  
-  
-  
+@keyframes float-random {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(10px, -10px) rotate(120deg); }
+    66% { transform: translate(-10px, 10px) rotate(240deg); }
+}
 
-  
+.animate-float-random {
+    animation: float-random 10s infinite ease-in-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes gradient-x {
+    0%, 100% { background-position: 0% 50% }
+    50% { background-position: 100% 50% }
+}
+
+.animate-gradient-x {
+    animation: gradient-x 15s ease infinite;
+    background-size: 200% 200%;
+}
+
+@keyframes bubble {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes molecule-spin {
+  0% { transform: rotate(0deg) translateY(0px); }
+  50% { transform: rotate(180deg) translateY(-10px); }
+  100% { transform: rotate(360deg) translateY(0px); }
+}
+
+.animate-bubble {
+  animation: bubble 3s infinite;
+}
+
+.animate-molecule {
+  animation: molecule-spin 8s infinite;
+}
+
+@keyframes chemistry-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+@keyframes glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+.animate-chemistry {
+  animation: chemistry-float 8s infinite ease-in-out;
+}
+
+.animate-glow {
+  animation: glow 3s infinite ease-in-out;
+}
+
+@keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-slow {
+    animation: bounce-slow 3s infinite ease-in-out;
+}
+
+.delay-100 {
+    animation-delay: 100ms;
+}
+
+.delay-200 {
+    animation-delay: 200ms;
+}
+
+@keyframes liquid {
+    0%, 100% { height: 30%; }
+    50% { height: 70%; }
+}
+
+.animate-liquid {
+    animation: liquid 3s ease-in-out infinite;
+}
+
+.animate-liquid-delay {
+    animation: liquid 3s ease-in-out infinite;
+    animation-delay: 0.5s;
+}
+
+.animate-liquid-slow {
+    animation: liquid 3s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+.animate-spin-slower {
+    animation: spin 8s linear infinite;
+}
+
+@property --gradient-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes gradient-rotate {
+    0% { --gradient-angle: 0deg; }
+    100% { --gradient-angle: 360deg; }
+}
+
+.bg-gradient-conic {
+    background: conic-gradient(from var(--gradient-angle),
+        theme(colors.yellow.500),
+        theme(colors.red.500),
+        theme(colors.purple.500),
+        theme(colors.blue.500),
+        theme(colors.green.500),
+        theme(colors.yellow.500))
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(180deg); }
+}
+
+.animate-float {
+    animation: float 6s infinite ease-in-out;
+}
+
+@keyframes pulse-soft {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+}
+
+.animate-pulse-soft {
+    animation: pulse-soft 3s infinite ease-in-out;
+}
+
+@keyframes ease-spring {
+  0% { transform: translateX(var(--tw-translate-x)); }
+  50% { transform: translateX(calc(var(--tw-translate-x) + 2px)); }
+  100% { transform: translateX(var(--tw-translate-x)); }
+}
+
+.ease-spring {
+  animation-timing-function: cubic-bezier(0.87, 0, 0.13, 1);
+}
+
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 8s ease infinite;
+}
+
+@keyframes wave {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    50% { transform: translateY(-5%) scaleY(1.1); }
+}
+
+@keyframes bubble {
+    0% { transform: translateY(100%) scale(0); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-100%) scale(1.2); opacity: 0; }
+}
+
+.animate-wave {
+    animation: wave 2s ease-in-out infinite;
+}
+
+.animate-wave-delayed {
+    animation: wave 3s ease-in-out infinite;
+}
+
+.animate-bubble {
+    animation: bubble 2s ease-in-out infinite;
+}
+
+.animate-bubble-delayed {
+    animation: bubble 2.5s ease-in-out infinite 1s;
+}
+
+@keyframes float-0 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(20px, -20px) rotate(15deg); }
+}
+
+@keyframes float-1 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-15px, -25px) rotate(-15deg); }
+}
+
+@keyframes float-2 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(15px, -15px) rotate(20deg); }
+}
+
+@keyframes bubble-float {
+    0% { transform: translateY(100%) scale(1); opacity: 0; }
+    50% { transform: translateY(-50%) scale(1.2); opacity: 0.6; }
+    100% { transform: translateY(-200%) scale(1); opacity: 0; }
+}
+
+.animate-float-0 { animation: float-0 8s infinite ease-in-out; }
+.animate-float-1 { animation: float-1 9s infinite ease-in-out; }
+.animate-float-2 { animation: float-2 10s infinite ease-in-out; }
+.animate-bubble-float { animation: bubble-float 20s infinite ease-out; }
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% { filter: brightness(100%); }
+  50% { filter: brightness(150%); }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+
+
+
+
