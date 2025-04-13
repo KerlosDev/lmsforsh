@@ -32,16 +32,48 @@ const Admin = () => {
     const [selectedCourse, setSelectedCourse] = useState('');
     const [courses, setCourses] = useState([]);
     const [manualEmail, setManualEmail] = useState('');
-    const [activeSection, setActiveSection] = useState(() => {
-        // Get saved section from localStorage or default to 'students'
-        return localStorage.getItem('adminActiveSection') || 'students'
-    });
-    const [analyticsData, setAnalyticsData] = useState([]);
-    const [monthlyStats, setMonthlyStats] = useState({
-        total: 0,
-        active: 0,
-        pending: 0
-    });
+    const [activeSection, setActiveSection] = useState('students'); // Default to students instead of using localStorage
+
+    // Replace localStorage initialization with useEffect
+    useEffect(() => {
+        const savedSection = localStorage.getItem('adminActiveSection');
+        if (savedSection) {
+            setActiveSection(savedSection);
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('adminActiveSection', activeSection);
+        } catch (error) {
+            console.error('Failed to save section to localStorage:', error);
+        }
+    }, [activeSection]);
+
+    // Similarly, wrap the admin password check in useEffect
+    useEffect(() => {
+        try {
+            const storedPassword = localStorage.getItem('adminPassword');
+            if (storedPassword === '135792468') {
+                setPassword(true);
+            }
+        } catch (error) {
+            console.error('Failed to check admin password:', error);
+        }
+    }, []);
+
+    const handleInputPass = (e) => {
+        const enteredPassword = e.target.value;
+        setAdminPass(enteredPassword);
+        if (enteredPassword === '135792468') {
+            setPassword(true);
+            try {
+                localStorage.setItem('adminPassword', enteredPassword);
+            } catch (error) {
+                console.error('Failed to store admin password:', error);
+            }
+        }
+    };
 
     const emailsPerPage = 5; // Emails to show per page
 
@@ -57,22 +89,6 @@ const Admin = () => {
             console.log(req)
         })
     }
-
-    useEffect(() => {
-        const storedPassword = localStorage.getItem('adminPassword');
-        if (storedPassword === '135792468') {
-            setPassword(true);
-        }
-    }, []);
-
-    const handleInputPass = (e) => {
-        const enteredPassword = e.target.value;
-        setAdminPass(enteredPassword);
-        if (enteredPassword === '135792468') {
-            setPassword(true);
-            localStorage.setItem('adminPassword', enteredPassword); // Store the password in localStorage
-        }
-    };
 
     const handleSelectEmail = (item, index) => {
         setEmail(item);
@@ -322,11 +338,6 @@ const Admin = () => {
         };
         fetchCourses();
     }, []);
-
-    // Add effect to save activeSection changes
-    useEffect(() => {
-        localStorage.setItem('adminActiveSection', activeSection);
-    }, [activeSection]);
 
     return (
         <ErrorBoundary fallback={<div className="text-white">Something went wrong. Please try again.</div>}>

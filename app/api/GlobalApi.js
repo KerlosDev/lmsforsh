@@ -926,6 +926,7 @@ const updateCourseExams = async (courseNickname, exams) => {
   }
 };
 
+
 const getOffer = async () => {
   const query = gql`
    query GetAllCourses {
@@ -974,7 +975,6 @@ const updateOffer = async (offerData) => {
             priceafter: ${sanitizedData.priceafter || 0},
             pricebefore: ${sanitizedData.pricebefore || 0},
             second: "${sanitizedData.second}",
-            
             third: "${sanitizedData.third}"
           }
         ) {
