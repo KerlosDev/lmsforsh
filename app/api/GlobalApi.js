@@ -12,6 +12,7 @@ const getAllCourseList = async () => {
         price
         isfree
         nicknameforcourse
+        updatedAt
         dataofcourse
       
       }

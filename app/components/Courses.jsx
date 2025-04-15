@@ -178,6 +178,46 @@ const Courses = () => {
                                     </div>
                                 </div>
 
+                                {/* Course Stats */}
+                                <div className="flex flex-col gap-2">
+                                    {/* Course Timeline */}
+                                    <div className="flex flex-col space-y-2">
+                                        <div className="flex items-center gap-2 py-1.5 px-3 bg-gradient-to-r from-blue-50/80 to-transparent 
+                                                    dark:from-blue-900/20 dark:to-transparent rounded-lg border-r-2 border-blue-500/50">
+                                            <div className="flex items-center gap-2 min-w-[140px]">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="text-sm text-slate-600 dark:text-slate-300 font-arabicUI3">تاريخ الإنشاء:</span>
+                                            </div>
+                                            <span className="text-sm text-blue-600 dark:text-blue-400 font-arabicUI2 ml-auto">
+                                                {item.dataofcourse ? new Intl.DateTimeFormat('ar-EG', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                }).format(new Date(item.dataofcourse)) : 'غير محدد'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 py-1.5 px-3 bg-gradient-to-r from-emerald-50/80 to-transparent 
+                                                    dark:from-emerald-900/20 dark:to-transparent rounded-lg border-r-2 border-emerald-500/50">
+                                            <div className="flex items-center gap-2 min-w-[140px]">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                <span className="text-sm text-slate-600 dark:text-slate-300 font-arabicUI3">آخر تحديث:</span>
+                                            </div>
+                                            <span className="text-sm text-emerald-600 dark:text-emerald-400 font-arabicUI2 ml-auto">
+                                                {item.updatedAt ? new Intl.DateTimeFormat('ar-EG', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                }).format(new Date(item.updatedAt)) : 'غير محدد'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Action Buttons Container */}
                                 <div className="flex flex-col sm:flex-row gap-3 mt-6">
                                     {/* View Course Button - Takes 2/3 width */}
