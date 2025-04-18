@@ -14,7 +14,7 @@ const getAllCourseList = async () => {
         nicknameforcourse
         updatedAt
         dataofcourse
-      
+        isDraft
       }
     }
   `;
@@ -53,37 +53,7 @@ const getcourseinfo = async (courseid) => {
     return { course: null }; // Return null course instead of throwing
   }
 };
-
-const sendEnrollData = async (courseid, userEmail, phonenumber) => {
-  const query3 = gql`
-  
-  mutation MyMutation {
-  createUserEnroll(
-    data: {course: {connect: {nicknameforcourse: "`+ courseid + `"}}, isHePaid: false, userEmail: "` + userEmail + `", courseid: "` + courseid + `", phonenumber: "` + phonenumber + `"}
-
-  ) {
-    id
-    course {
-      nameofcourse
-    }
-    stage
-  }
-     publishManyUserEnrollsConnection(first: 1000) {
-    edges {
-      node {
-        id
-      }
-    }
-  }
-}
-  
-  `
-
-
-  const result3 = await request(MASTER_URL, query3)
-  return result3
-}
-
+ 
 
 const getQuizDataWithEnroll = async (userEmail, quizId) => {
   const query5 = gql`
@@ -378,24 +348,7 @@ const sendExamData = async (formattedData, examTitle) => {
 };
 
 
-const updatePaymentStatus = async (enrollId, isHePaid) => {
-  const query = gql`
-    mutation UpdatePayment {
-      updateUserEnroll(
-        where: { id: "${enrollId}" }
-        data: { isHePaid: ${isHePaid} }
-      ) {
-        id
-      }
-      publishUserEnroll(where: { id: "${enrollId}" }) {
-        id
-      }
-    }
-  `;
-
-  const result = await request(MASTER_URL, query);
-  return result;
-};
+ 
 
 const getPaymentLogs = async () => {
   const query = gql`
@@ -529,7 +482,6 @@ const saveNewActivation = async (userData) => {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       ...userData,
-      status: 'pending'
     };
 
     activations.push(newActivation);
@@ -685,6 +637,7 @@ const createCourse = async (courseData) => {
           isfree: ${courseData.isfree}
           dataofcourse: "${courseData.dataofcourse}"
           nicknameforcourse: "${escapedNickname}"
+          isDraft: ${courseData.isDraft || false}
         
         }
       ) {
@@ -737,7 +690,8 @@ const updateCourse = async (courseId, courseData) => {
             description: "${escapedDesc}",
             price: ${courseData.price},
             isfree: ${courseData.isfree},
-            nicknameforcourse: "${escapedNickname}"
+            nicknameforcourse: "${escapedNickname}",
+            isDraft: ${courseData.isDraft}
           }
         ) {
           id
@@ -746,6 +700,7 @@ const updateCourse = async (courseId, courseData) => {
           price
           isfree
           nicknameforcourse
+          isDraft
         }
         publishCourse(where: { id: "${courseId}" }) {
           id
@@ -1063,21 +1018,183 @@ const getQuizById = async (quizId) => {
 
 const deleteActivation = async (activationId) => {
   try {
-    const result = await client.query({
-      query: gql`
-        mutation DeleteActivation($id: ID!) {
-          deleteActivation(id: $id)
-        }
-      `,
-      variables: {
-        id: activationId
-      }
-    });
-    return result.data;
+    const existingData = await getActivationData();
+    let activations = JSON.parse(existingData.actvition?.activit || '[]');
+
+    // Filter out the activation to delete
+    const updatedActivations = activations.filter(
+      activation => activation.id !== activationId
+    );
+
+    // Update the data
+    await updateActivationData(updatedActivations);
+    return true;
   } catch (error) {
     console.error('Error deleting activation:', error);
     throw error;
   }
+};
+
+const updateAllCourses = async (data) => {
+  // For each course in the data
+  try {
+      for (const course of data.courses) {
+          // Update course data
+          await updateCourse(course.id, course);
+      }
+
+      // If there are chapters, update them
+      if (data.chapters) {
+          for (const [courseNickname, chapters] of Object.entries(data.chapters)) {
+              await updateCourseChapters(courseNickname, chapters);
+          }
+      }
+
+      // If there are exams, update them
+      if (data.exams) {
+          await updateExamOrder(data.exams);
+      }
+
+      return { success: true };
+  } catch (error) {
+      console.error('Error updating courses:', error);
+      throw error;
+  }
+};
+
+const createBookOrder = async (orderData) => {
+  const mutation = gql`
+    mutation CreateBookOrder {
+      createBookOrder(data: {
+        name: "${orderData.name}",
+        phone: "${orderData.phone}",
+        governorate: "${orderData.governorate}",
+        address: "${orderData.address}",
+        bookId: "${orderData.bookId}",
+        status: "pending"
+      }) {
+        id
+      }
+      publishBookOrder {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
+const getBookOrders = async () => {
+  const query = gql`
+    query MyQuery {
+      bookOrder(where: {id: "cm9mzx1m00zbd07obpqiv93u3"}) {
+        id
+        books
+      }
+    }
+  `;
+
+  const result = await request(MASTER_URL, query);
+  return result;
+};
+
+const saveBookOrder = async (orderData) => {
+  try {
+    const existingData = await getBookOrders();
+    let orders = [];
+    try {
+      orders = JSON.parse(existingData.bookOrder.books || '[]');
+    } catch (e) {
+      orders = [];
+    }
+
+    const newOrder = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ...orderData
+    };
+
+    // Check if user has a pending order for the same book
+    const hasPendingOrder = orders.some(order => 
+      order.userEmail === orderData.userEmail && 
+      order.bookId === orderData.bookId && 
+      order.status === 'pending'
+    );
+
+    if (hasPendingOrder) {
+      throw new Error('لديك طلب معلق لنفس الكتاب');
+    }
+
+    orders.push(newOrder);
+
+    const mutation = gql`
+      mutation UpdateBookOrder {
+        updateBookOrder(
+          where: { id: "cm9mzx1m00zbd07obpqiv93u3" }
+          data: { books: ${JSON.stringify(JSON.stringify(orders))} }
+        ) {
+          id
+        }
+        publishBookOrder(where: { id: "cm9mzx1m00zbd07obpqiv93u3" }) {
+          id
+        }
+      }
+    `;
+
+    return await request(MASTER_URL, mutation);
+  } catch (error) {
+    console.error('Error saving book order:', error);
+    throw error;
+  }
+};
+
+const updateBookOrders = async (orders) => {
+  const mutation = gql`
+    mutation UpdateBookOrder {
+      updateBookOrder(
+        where: { id: "cm9mzx1m00zbd07obpqiv93u3" }
+        data: { books: ${JSON.stringify(JSON.stringify(orders))} }
+      ) {
+        id
+      }
+      publishBookOrder(where: { id: "cm9mzx1m00zbd07obpqiv93u3" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
+const getBooks = async () => {
+  const query = gql`
+    query GetBooks {
+      bookOrder(where: {id: "cm9n1q4oi10dx07obh81ejrsv"}) {
+        id
+        books
+      }
+    }
+  `;
+
+  const result = await request(MASTER_URL, query);
+  return result;
+};
+
+const saveBooks = async (booksData) => {
+  const mutation = gql`
+    mutation UpdateBooks {
+      updateBookOrder(
+        where: { id: "cm9n1q4oi10dx07obh81ejrsv" }
+        data: { books: ${JSON.stringify(JSON.stringify(booksData))} }
+      ) {
+        id
+      }
+      publishBookOrder(where: { id: "cm9n1q4oi10dx07obh81ejrsv" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
 };
 
 export default {
@@ -1091,8 +1208,7 @@ export default {
   sendExamData,
   sendEnroll4Admin,
   getAllCourseList,
-  getcourseinfo,
-  sendEnrollData,
+  getcourseinfo, 
   getQuizDataWithEnroll,
   SaveGradesOfQuiz,
   data4admin,
@@ -1103,8 +1219,7 @@ export default {
   updateExam,
   getQuizJsonResult,
   getQuizResults,
-  updateQuizResults,
-  updatePaymentStatus,
+  updateQuizResults, 
   getActivationData,
   updateActivationData,
   saveNewActivation,
@@ -1123,5 +1238,12 @@ export default {
   updateCourseExams,
   updateOffer,
   getQuizById,
-  deleteActivation
+  deleteActivation,
+  updateAllCourses,
+  createBookOrder,
+  getBookOrders,
+  saveBookOrder,
+  updateBookOrders,
+  getBooks,
+  saveBooks,
 }

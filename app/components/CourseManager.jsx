@@ -1,12 +1,21 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import GlobalApi from '../api/GlobalApi';
-import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaBook, FaVideo, FaQuestionCircle, FaArrowUp, FaArrowDown, FaCopy, FaArchive } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import CourseSkeleton from './CourseSkeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+import CourseSkeleton from './CourseSkeleton';
+import CourseStats from './course-manager/CourseStats';
+import CourseFilters from './course-manager/CourseFilters';
+import CourseCard from './course-manager/CourseCard';
+import CourseEditForm from './course-manager/CourseEditForm';
+import CourseAddModal from './course-manager/CourseAddModal';
+import CourseActionsToolbar from './course-manager/CourseActionsToolbar';
+import DashboardHeader from './course-manager/DashboardHeader';
 
 const CourseManager = () => {
+    // Add new state for sorting
+    const [sortBy, setSortBy] = useState('newest');
+
     const [courses, setCourses] = useState([]);
     const [editingCourse, setEditingCourse] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,6 +27,7 @@ const CourseManager = () => {
         isfree: false,          // Boolean
         dataofcourse: '',       // Date
         nicknameforcourse: '',  // Slug, String, Unique
+        isDraft: false,  // Add this line
         chapterMood: {          // Basic chapter, Multiple values
             nameofchapter: '',
             linkOfVideo: ''
@@ -38,6 +48,7 @@ const CourseManager = () => {
     const [selectedExams, setSelectedExams] = useState([]); // New state for multiple exams
     const [courseExams, setCourseExams] = useState({});
     const [examOrder, setExamOrder] = useState([]); // Add this state
+    const [filterState, setFilterState] = useState('all'); // 'all', 'published', 'draft'
 
     useEffect(() => {
         fetchCourses();
@@ -122,7 +133,8 @@ const CourseManager = () => {
             const editData = {
                 ...course,
                 description: course.description || '',
-                exam: course.exam?.[0] || null
+                exam: course.exam?.[0] || null,
+                isDraft: course.isDraft || false // Ensure isDraft is included with default value
             };
 
             console.log('Setting editingCourse:', editData);
@@ -171,6 +183,7 @@ const CourseManager = () => {
                 description: editingCourse.description || '',
                 price: Number(editingCourse.price) || 0,
                 isfree: Boolean(editingCourse.isfree),
+                isDraft: Boolean(editingCourse.isDraft), // Ensure isDraft is included
                 nicknameforcourse: editingCourse.nicknameforcourse,
                 chapters: editingChapters, // Include chapters in the update
                 exams: selectedExams
@@ -219,6 +232,7 @@ const CourseManager = () => {
                 description: newCourse.description || '',
                 price: Number(newCourse.price) || 0,
                 isfree: newCourse.isfree,
+                isDraft: newCourse.isDraft, // Add this line
                 dataofcourse: newCourse.dataofcourse || new Date().toISOString(),
                 nicknameforcourse: newCourse.nicknameforcourse,
                 chapters: chapters.filter(ch => ch.nameofchapter && ch.linkOfVideo), // Only include non-empty chapters
@@ -250,6 +264,7 @@ const CourseManager = () => {
             isfree: false,
             dataofcourse: '',
             nicknameforcourse: '',
+            isDraft: false, // Add this line
             chapterMood: { nameofchapter: '', linkOfVideo: '' },
             exam: { title: '', jsonexam: '' }
         });
@@ -319,535 +334,222 @@ const CourseManager = () => {
         });
     };
 
-    const renderEditForm = (course) => (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
-            <div className="bg-gray-900 rounded-2xl w-full max-w-7xl border border-white/10 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 bg-gray-900 p-4 sm:p-6 border-b border-white/10 flex justify-between items-center">
-                    <h3 className="text-xl sm:text-2xl font-bold text-white">تعديل الكورس</h3>
-                    <button
-                        onClick={() => setEditingCourse(null)}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-lg"
-                    >
-                        <FaTimes className="text-white" />
-                    </button>
-                </div>
+    // Filter and sort courses
+    const filteredCourses = () => {
+        let filtered = [...courses];
 
-                <div className="p-4 sm:p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* Basic Info Column */}
-                        <div className="lg:col-span-4 space-y-4">
-                            <h4 className="text-lg font-semibold text-white mb-4">المعلومات الأساسية</h4>
-                            <input
-                                type="text"
-                                value={editingCourse.nameofcourse}
-                                onChange={(e) => setEditingCourse({
-                                    ...editingCourse,
-                                    nameofcourse: e.target.value
-                                })}
-                                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-                                placeholder="اسم الكورس"
-                            />
-                            <input
-                                type="text"
-                                value={editingCourse.nicknameforcourse}
-                                onChange={(e) => setEditingCourse({
-                                    ...editingCourse,
-                                    nicknameforcourse: e.target.value
-                                })}
-                                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-                                placeholder="كود الكورس"
-                            />
-                            <div className="flex items-center gap-4">
-                                <input
-                                    type="number"
-                                    value={editingCourse.price}
-                                    onChange={(e) => setEditingCourse({
-                                        ...editingCourse,
-                                        price: e.target.value
-                                    })}
-                                    className="flex-1 p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-                                    placeholder="السعر"
-                                />
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={editingCourse.isfree}
-                                        onChange={(e) => setEditingCourse({
-                                            ...editingCourse,
-                                            isfree: e.target.checked
-                                        })}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 
-                                        peer-checked:after:translate-x-full after:content-[''] after:absolute 
-                                        after:top-[2px] after:left-[2px] after:bg-white after:rounded-full 
-                                        after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                                    </div>
-                                    <span className="mr-3 text-sm font-medium text-white">مجاني</span>
-                                </label>
-                            </div>
-                            <textarea
-                                value={editingCourse.description}
-                                onChange={(e) => setEditingCourse({
-                                    ...editingCourse,
-                                    description: e.target.value
-                                })}
-                                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white h-32"
-                                placeholder="وصف الكورس"
-                            />
-                        </div>
+        switch (filterState) {
+            case 'published':
+                filtered = filtered.filter(course => !course.isDraft);
+                break;
+            case 'draft':
+                filtered = filtered.filter(course => course.isDraft);
+                break;
+        }
 
-                        {/* Chapters Column */}
-                        <div className="lg:col-span-4 lg:border-x border-white/10 lg:px-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="text-lg font-semibold text-white">الفصول</h4>
-                                <button
-                                    onClick={() => setEditingChapters([...editingChapters, { nameofchapter: '', linkOfVideo: '' }])}
-                                    className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30"
-                                >
-                                    <FaPlus />
-                                </button>
-                            </div>
-                            <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                                {editingChapters.map((chapter, index) => (
-                                    <div key={index} className="relative bg-white/5 p-4 rounded-lg">
-                                        <div className="flex gap-2 mb-2">
-                                            <button
-                                                onClick={() => moveChapter(index, 'up')}
-                                                disabled={index === 0}
-                                                className={`p-1 rounded ${index === 0 ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-500/20'}`}
-                                            >
-                                                <FaArrowUp size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => moveChapter(index, 'down')}
-                                                disabled={index === editingChapters.length - 1}
-                                                className={`p-1 rounded ${index === editingChapters.length - 1 ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-500/20'}`}
-                                            >
-                                                <FaArrowDown size={14} />
-                                            </button>
-                                            <span className="text-gray-400 text-sm">Chapter {index + 1}</span>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={chapter.nameofchapter}
-                                            onChange={(e) => {
-                                                const newChapters = [...editingChapters];
-                                                newChapters[index].nameofchapter = e.target.value;
-                                                setEditingChapters(newChapters);
-                                            }}
-                                            className="w-full p-2 bg-white/5 border border-white/10 rounded mb-2 text-white"
-                                            placeholder="اسم الفصل"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={chapter.linkOfVideo}
-                                            onChange={(e) => {
-                                                const newChapters = [...editingChapters];
-                                                newChapters[index].linkOfVideo = e.target.value;
-                                                setEditingChapters(newChapters);
-                                            }}
-                                            className="w-full p-2 bg-white/5 border border-white/10 rounded text-white"
-                                            placeholder="رابط الفيديو"
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                const newChapters = editingChapters.filter((_, i) => i !== index);
-                                                setEditingChapters(newChapters);
-                                            }}
-                                            className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
-                                        >
-                                            <FaTrash size={12} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+        switch (sortBy) {
+            case 'newest':
+                filtered.sort((a, b) => new Date(b.dataofcourse) - new Date(a.dataofcourse));
+                break;
+            case 'oldest':
+                filtered.sort((a, b) => new Date(a.dataofcourse) - new Date(b.dataofcourse));
+                break;
+            case 'name':
+                filtered.sort((a, b) => a.nameofcourse.localeCompare(b.nameofcourse));
+                break;
+        }
 
-                        {/* Exam Column */}
-                        <div className="lg:col-span-4">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="text-lg font-semibold text-white">الامتحانات</h4>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                {selectedExams.map((exam, index) => (
-                                    <div key={exam.id} className="relative bg-white/5 p-4 rounded-lg">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-white">{exam.title}</span>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => moveExam(index, 'up')}
-                                                    disabled={index === 0}
-                                                    className={`p-1 rounded ${index === 0 ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-500/20'}`}
-                                                >
-                                                    <FaArrowUp size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={() => moveExam(index, 'down')}
-                                                    disabled={index === selectedExams.length - 1}
-                                                    className={`p-1 rounded ${index === selectedExams.length - 1 ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-500/20'}`}
-                                                >
-                                                    <FaArrowDown size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleExamSelection(exam.id)}
-                                                    className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
-                                                >
-                                                    <FaTrash size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                <div className="mt-4">
-                                    <h5 className="text-white mb-2">Available Exams</h5>
-                                    {exams
-                                        .filter(exam => !selectedExams.some(selected => selected.id === exam.id))
-                                        .map(exam => (
-                                            <div
-                                                key={exam.id}
-                                                onClick={() => handleExamSelection(exam.id)}
-                                                className="p-3 bg-white/5 border border-white/10 rounded-lg text-white cursor-pointer hover:bg-white/10 mb-2"
-                                            >
-                                                {exam.title}
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-6 border-t border-white/10 flex justify-end gap-3">
-                    <button
-                        onClick={() => setEditingCourse(null)}
-                        className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all"
-                    >
-                        إلغاء
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all"
-                    >
-                        حفظ التغييرات
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-
-    // Add error boundary
-    if (!courses) {
-        return <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
-            <p className="text-white">Loading courses...</p>
-        </div>;
-    }
-
-    const renderCourseChapters = (course) => {
-        const chapters = courseChapters[course.nicknameforcourse] || [];
-        const sortedChapters = [...chapters].sort((a, b) => a.order - b.order);
-        return (
-            <div className="flex items-center gap-3 text-gray-300">
-                <FaVideo className="text-green-400" />
-                <span>{sortedChapters.length} chapters</span>
-            </div>
-        );
+        return filtered;
     };
 
-    const renderCourseExams = (course) => (
-        <div className="flex items-center gap-3 text-gray-300">
-            <FaQuestionCircle className="text-yellow-400" />
-            <span>
-                {course.exams?.length > 0
-                    ? `${course.exams.length} Exams`
-                    : 'No exams'
-                }
-            </span>
-        </div>
-    );
-
-    // Add new features for course management
-    const duplicateCourse = async (course) => {
+    const handleDownloadJson = async () => {
         try {
-            const newCourse = {
-                ...course,
-                nameofcourse: `نسخة من ${course.nameofcourse}`,
-                nicknameforcourse: `${course.nicknameforcourse}-copy-${Date.now()}`,
-                chapters: courseChapters[course.nicknameforcourse] || [],
-                exams: examOrder.filter(ex => ex.courseNickname === course.nicknameforcourse)
+            const coursesData = {
+                courses: courses,
+                chapters: courseChapters,
+                exams: examOrder
             };
-
-            const result = await GlobalApi.createCourse(newCourse);
-            if (result?.createCourse?.id) {
-                toast.success('تم نسخ الكورس بنجاح');
-                fetchCourses();
-            }
+            const jsonData = JSON.stringify(coursesData, null, 2);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `courses-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success('تم تحميل النسخة الاحتياطية بنجاح');
         } catch (error) {
-            toast.error('فشل نسخ الكورس');
+            console.error('Download error:', error);
+            toast.error('حدث خطأ أثناء تحميل الملف');
         }
     };
 
-     
-
-    // Add this to your course card rendering
-    const renderCourseActions = (course) => (
-        <div className="flex gap-2">
-            <button
-                onClick={() => handleEdit(course)}
-                className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20"
-            >
-                <FaEdit />
-            </button>
-            <button
-                onClick={() => duplicateCourse(course)}
-                className="p-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20"
-                title="نسخ الكورس"
-            >
-                <FaCopy />
-            </button>
-             
-        </div>
-    );
+    const handleUploadJson = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+    
+        setIsLoading(true); // Show loading state
+    
+        try {
+            const text = await file.text();
+            const jsonData = JSON.parse(text);
+    
+            // Validate data structure
+            if (!jsonData.courses || !Array.isArray(jsonData.courses)) {
+                throw new Error('Invalid JSON format: missing courses array');
+            }
+    
+            // Process each course one by one
+            for (const course of jsonData.courses) {
+                // Generate unique nickname by appending timestamp
+                const timestamp = Date.now();
+                const uniqueNickname = `${course.nicknameforcourse}-${timestamp}`;
+                
+                // Get chapters for this course from the chapters object
+                const courseChapters = jsonData.chapters[course.nicknameforcourse] || [];
+                
+                // Get exams for this course
+                const courseExams = jsonData.exams?.filter(exam => 
+                    exam.courseNickname === course.nicknameforcourse
+                ) || [];
+    
+                // Prepare course data with unique nickname
+                const courseData = {
+                    ...course,
+                    nicknameforcourse: uniqueNickname, // Use unique nickname
+                    isDraft: course.isDraft || false,
+                    price: Number(course.price) || 0,
+                    isfree: Boolean(course.isfree),
+                    dataofcourse: course.dataofcourse || new Date().toISOString().split('T')[0],
+                    chapters: courseChapters.map(chapter => ({
+                        nameofchapter: chapter.nameofchapter,
+                        linkOfVideo: chapter.linkOfVideo,
+                        order: chapter.order
+                    })),
+                    exams: courseExams
+                };
+    
+                // Create the course
+                try {
+                    const result = await GlobalApi.createCourse(courseData);
+                    
+                    if (result?.createCourse?.id) {
+                        // Update chapters and exams after course creation
+                        await Promise.all([
+                            GlobalApi.updateCourseChapters(
+                                uniqueNickname, // Use unique nickname here too
+                                courseData.chapters
+                            ),
+                            GlobalApi.updateCourseExams(
+                                uniqueNickname, // And here
+                                courseData.exams
+                            )
+                        ]);
+                    }
+                } catch (error) {
+                    console.error(`Failed to create course: ${courseData.nameofcourse}`, error);
+                    // Continue with next course even if one fails
+                    continue;
+                }
+            }
+    
+            toast.success('تم تحديث البيانات بنجاح');
+            
+            // Refresh all data
+            await Promise.all([
+                fetchCourses(),
+                fetchAllChapters(),
+                fetchExamOrders(),
+                fetchExams()
+            ]);
+    
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('حدث خطأ في تنسيق الملف أو تحميله');
+        } finally {
+            setIsLoading(false);
+            // Reset file input
+            event.target.value = '';
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-3 sm:p-6">
-            {/* Dashboard Header */}
-            <div className="mb-6 sm:mb-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                        إدارة الكورسات
-                    </h1>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 hover:bg-indigo-700 
-                        text-white rounded-lg transition-all shadow-lg hover:shadow-indigo-500/20"
-                    >
-                        <FaPlus className="text-sm" /> إضافة كورس جديد
-                    </button>
+        <div className="min-h-screen font-arabicUI3 bg-gradient-to-br from-gray-900 rounded-xl via-gray-800 to-gray-900 p-6">
+            <div className="max-w-7xl mx-auto">
+                <DashboardHeader onAddCourse={() => setIsModalOpen(true)} />
+                
+                <CourseStats courses={courses} />
+                
+                <CourseActionsToolbar 
+                    onDownload={handleDownloadJson}
+                    onUpload={handleUploadJson}
+                    onAddCourse={() => setIsModalOpen(true)}
+                />
+                
+                <CourseFilters
+                    filterState={filterState}
+                    setFilterState={setFilterState}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    courses={courses}
+                />
+
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-8">
+                    <AnimatePresence mode="wait">
+                        {isLoading ? (
+                            [...Array(6)].map((_, index) => (
+                                <motion.div key={`skeleton-${index}`}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                                >
+                                    <CourseSkeleton />
+                                </motion.div>
+                            ))
+                        ) : (
+                            filteredCourses().map((course, index) => (
+                                <CourseCard
+                                    key={course.id}
+                                    course={course}
+                                    index={index}
+                                    onEdit={() => handleEdit(course)}
+                                    onDuplicate={() => duplicateCourse(course)}
+                                    chapters={courseChapters[course.nicknameforcourse]}
+                                />
+                            ))
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
-            {/* Course Grid */}
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                <AnimatePresence mode="wait">
-                    {isLoading ? (
-                        // Show skeletons while loading
-                        [...Array(6)].map((_, index) => (
-                            <motion.div
-                                key={`skeleton-${index}`}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.3, delay: index * 0.1 }}
-                            >
-                                <CourseSkeleton />
-                            </motion.div>
-                        ))
-                    ) : (
-                        courses.map((course, index) => (
-                            <motion.div
-                                key={course.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3, delay: index * 0.1 }}
-                            >
-                                {/* Your existing course card content */}
-                                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 shadow-xl 
-                                    border border-white/10 hover:border-white/20 transition-all">
-                                    {/* ...existing course card content... */}
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white mb-2">
-                                                {course.nameofcourse}
-                                            </h3>
-                                            <p className="text-gray-400 text-sm">
-                                                {course.nicknameforcourse}
-                                            </p>
-                                        </div>
-                                        {renderCourseActions(course)}
-                                    </div>
+            {editingCourse && (
+                <CourseEditForm
+                    course={editingCourse}
+                    chapters={editingChapters}
+                    selectedExams={selectedExams}
+                    exams={exams}
+                    onClose={() => setEditingCourse(null)}
+                    onSave={handleSave}
+                    onUpdateChapters={setEditingChapters}
+                    onUpdateExams={setSelectedExams}
+                />
+            )}
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3 text-gray-300">
-                                            <FaBook className="text-indigo-400" />
-                                            <span>{course.description || 'No description'}</span>
-                                        </div>
-                                        {renderCourseChapters(course)}
-                                        {renderCourseExams(course)}
-                                    </div>
-
-                                    <div className="mt-6 flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-white">
-                                            {course.price} جنيه
-                                        </span>
-                                        <span className={`px-3 py-1 rounded-full text-sm ${course.isfree ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
-                                            }`}>
-                                            {course.isfree ? 'مجاني' : 'مدفوع'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* Edit Modal */}
-            {editingCourse && renderEditForm()}
-
-            {/* Add Course Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
-                    <div className="bg-gray-900 rounded-2xl w-full max-w-7xl border border-white/10 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-gray-900 p-4 sm:p-6 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xl sm:text-2xl font-bold text-white">إضافة كورس جديد</h3>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg"
-                            >
-                                <FaTimes className="text-white" />
-                            </button>
-                        </div>
-
-                        <div className="p-4 sm:p-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                {/* Left Column - Basic Info */}
-                                <div className="lg:col-span-4 space-y-4">
-                                    <h4 className="text-lg font-semibold text-white mb-4">المعلومات الأساسية</h4>
-                                    <input
-                                        type="text"
-                                        placeholder="اسم الكورس"
-                                        value={newCourse.nameofcourse}
-                                        onChange={(e) => setNewCourse({ ...newCourse, nameofcourse: e.target.value })}
-                                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="كود الكورس"
-                                        value={newCourse.nicknameforcourse}
-                                        onChange={(e) => setNewCourse({ ...newCourse, nicknameforcourse: e.target.value })}
-                                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-                                    />
-                                    <div className="flex items-center gap-4">
-                                        <input
-                                            type="number"
-                                            placeholder="السعر"
-                                            value={newCourse.price}
-                                            onChange={(e) => setNewCourse({ ...newCourse, price: e.target.value })}
-                                            className="flex-1 p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-                                        />
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={newCourse.isfree}
-                                                onChange={(e) => setNewCourse({ ...newCourse, isfree: e.target.checked })}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 
-                                                peer-checked:after:translate-x-full after:content-[''] after:absolute 
-                                                after:top-[2px] after:left-[2px] after:bg-white after:rounded-full 
-                                                after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                            <span className="mr-3 text-sm font-medium text-white">مجاني</span>
-                                        </label>
-                                    </div>
-                                    <textarea
-                                        placeholder="وصف الكورس"
-                                        value={newCourse.description}
-                                        onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white h-32"
-                                    />
-                                </div>
-
-                                {/* Middle Column - Chapters */}
-                                <div className="lg:col-span-4 lg:border-x border-white/10 lg:px-6">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-lg font-semibold text-white">الفصول</h4>
-                                        <button
-                                            onClick={addChapter}
-                                            className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30"
-                                        >
-                                            <FaPlus /> إضافة فصل
-                                        </button>
-                                    </div>
-                                    <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                                        {chapters.map((chapter, index) => (
-                                            <div key={index} className="relative bg-white/5 p-4 rounded-lg">
-                                                <input
-                                                    type="text"
-                                                    placeholder="اسم الفصل"
-                                                    value={chapter.nameofchapter}
-                                                    onChange={(e) => updateChapter(index, 'nameofchapter', e.target.value)}
-                                                    className="w-full p-2 bg-white/5 border border-white/10 rounded mb-2 text-white"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    placeholder="رابط الفيديو"
-                                                    value={chapter.linkOfVideo}
-                                                    onChange={(e) => updateChapter(index, 'linkOfVideo', e.target.value)}
-                                                    className="w-full p-2 bg-white/5 border border-white/10 rounded text-white"
-                                                />
-                                                {chapters.length > 1 && (
-                                                    <button
-                                                        onClick={() => removeChapter(index)}
-                                                        className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 
-                                                        rounded hover:bg-red-500/30"
-                                                    >
-                                                        <FaTrash size={12} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Right Column - Exam */}
-                                <div className="lg:col-span-4">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-lg font-semibold text-white">الامتحانات</h4>
-                                        <button
-                                            onClick={() => setShowExamModal(true)}
-                                            className="p-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30"
-                                        >
-                                            <FaPlus /> إنشاء امتحان جديد
-                                        </button>
-                                    </div>
-                                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                        {exams.map(exam => (
-                                            <label key={exam.id} className="flex items-center space-x-3 p-3 bg-white/5 
-                                                border border-white/10 rounded-lg text-white cursor-pointer hover:bg-white/10">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedExams.some(e => e.id === exam.id)}
-                                                    onChange={() => handleExamSelection(exam.id)}
-                                                    className="form-checkbox h-5 w-5 text-indigo-600"
-                                                />
-                                                <span>{exam.title}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-6 border-t border-white/10 flex flex-col sm:flex-row justify-end gap-3">
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="w-full sm:w-auto px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white 
-                                rounded-lg transition-all"
-                            >
-                                إلغاء
-                            </button>
-                            <button
-                                onClick={handleAddCourse}
-                                className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 
-                                text-white rounded-lg transition-all"
-                            >
-                                إضافة الكورس
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <CourseAddModal
+                    onClose={() => setIsModalOpen(false)}
+                    onAdd={handleAddCourse}
+                    chapters={chapters}
+                    exams={exams}
+                    selectedExams={selectedExams}
+                    onUpdateChapters={setChapters}
+                    onExamSelect={handleExamSelection}
+                    newCourse={newCourse}
+                    onUpdateNewCourse={setNewCourse}
+                />
             )}
         </div>
     );

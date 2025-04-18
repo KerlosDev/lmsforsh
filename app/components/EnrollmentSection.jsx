@@ -12,7 +12,7 @@ const EnrollmentSection = ({ courseInfo, isCourseFound }) => {
     const [loading, setLoading] = useState(false);
     const [enrolled, setEnrolled] = useState(isCourseFound);
 
-    const handleFreeEnrollment = async () => {
+    const handleclicknum = async () => {
         if (!user) {
             toast.error('يرجى تسجيل الدخول أولاً');
             return;
@@ -20,16 +20,25 @@ const EnrollmentSection = ({ courseInfo, isCourseFound }) => {
 
         setLoading(true);
         try {
-            const result = await GlobalApi.autoEnrollFree(
-                courseInfo.nicknameforcourse,
-                user.primaryEmailAddress.emailAddress
-            );
+            // Generate a unique enrollment ID
+            const uniqueEnrollId = `enr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Save activation with free course data
+            await GlobalApi.saveNewActivation({
+                enrollmentId: uniqueEnrollId,
+                userEmail: user.primaryEmailAddress?.emailAddress,
+                userName: user.firstName,
+                phoneNumber: "free",
+                courseName: courseInfo.nameofcourse,
+                courseId: courseInfo.nicknameforcourse,
+                price: 0,
+                status: "approved", // Auto-approve free courses
+                paymentMethod: "free"
+            });
 
-            if (result?.createUserEnroll?.id) {
-                setEnrolled(true);
-                toast.success('تم التسجيل في الكورس بنجاح');
-                window.location.reload();
-            }
+            setEnrolled(true);
+            toast.success('تم التسجيل في الكورس بنجاح');
+            window.location.reload();
         } catch (error) {
             console.error('Error:', error);
             toast.error('حدث خطأ في التسجيل');
@@ -66,7 +75,7 @@ const EnrollmentSection = ({ courseInfo, isCourseFound }) => {
                         </div>
                     ) : (
                         <button
-                            onClick={handleFreeEnrollment}
+                            onClick={handleclicknum}
                             disabled={loading}
                             className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-600 
                                 text-white rounded-lg p-4 transition flex items-center justify-center gap-2"

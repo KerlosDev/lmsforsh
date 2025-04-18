@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import GlobalApi from '../api/GlobalApi';
 import { ToastContainer, toast } from 'react-toastify';
-import { FaUsers, FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaFilter, FaSearch, FaFileExport, FaSortAmountDown, FaChartBar, FaFileAlt, FaMoneyBillWave, FaChartLine, FaFilePdf, FaFileExcel, FaFileCsv, FaPrint } from 'react-icons/fa';
+import { FaUsers, FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaFilter, FaSearch, FaFileExport, FaSortAmountDown, FaChartBar, FaFileAlt, FaMoneyBillWave, FaChartLine, FaFilePdf, FaFileExcel, FaFileCsv, FaPrint, FaDownload, FaUpload } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import 'react-toastify/dist/ReactToastify.css';
 import * as XLSX from 'xlsx';
@@ -52,6 +52,7 @@ const StudentActivation = () => {
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [activeTab, setActiveTab] = useState('activations');
     const [selectedPeriod, setSelectedPeriod] = useState('week');
+    const [uploadError, setUploadError] = useState(null);
 
     // New calculations
     const calculateMetrics = useMemo(() => {
@@ -140,6 +141,43 @@ const StudentActivation = () => {
         XLSX.writeFile(wb, 'activations.xlsx');
     };
 
+    const handleDownloadJson = () => {
+        try {
+            const jsonData = JSON.stringify(activations, null, 2);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `activations-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success('تم تحميل ملف JSON بنجاح');
+        } catch (error) {
+            toast.error('حدث خطأ أثناء تحميل الملف');
+        }
+    };
+
+    const handleBackupJson = async () => {
+        try {
+            const result = await GlobalApi.getActivationData();
+            const jsonData = JSON.stringify(JSON.parse(result.actvition?.activit || '[]'), null, 2);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `activations-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success('تم عمل نسخة احتياطية بنجاح');
+        } catch (error) {
+            toast.error('حدث خطأ أثناء عمل النسخة الاحتياطية');
+        }
+    };
+
     const handleBulkAction = async (action) => {
         try {
             await Promise.all(
@@ -152,6 +190,36 @@ const StudentActivation = () => {
             setSelectedItems([]);
         } catch (error) {
             toast.error('حدث خطأ أثناء تحديث الطلبات');
+        }
+    };
+
+    const handleUploadJson = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    // Validate the JSON structure
+                    if (!Array.isArray(jsonData)) {
+                        throw new Error('Invalid JSON format - must be an array');
+                    }
+
+                    // Update the activation data
+                    await GlobalApi.updateActivationData(jsonData);
+                    await fetchActivations();
+                    toast.success('تم تحديث البيانات بنجاح');
+                } catch (error) {
+                    setUploadError('Invalid JSON format');
+                    toast.error('صيغة الملف غير صحيحة');
+                }
+            };
+            reader.readAsText(file);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            toast.error('حدث خطأ أثناء تحميل الملف');
         }
     };
 
@@ -218,16 +286,40 @@ const StudentActivation = () => {
 
     const handleStatusChange = async (activationId, newStatus) => {
         try {
-            await GlobalApi.updateActivationStatus(activationId, newStatus);
-            if (newStatus === 'approved') {
-                // Update enrollment status
-                const activation = activations.find(a => a.id === activationId);
-                await GlobalApi.editStateSub(activation.enrollmentId, true);
+            // First find the activation record
+            const activation = activations.find(a => a.id === activationId);
+            if (!activation) {
+                throw new Error('Activation not found');
             }
+
+            // Update activation status
+            await GlobalApi.updateActivationStatus(activationId, newStatus);
+
+            // If approving and we have an enrollmentId, update the enrollment
+            if (newStatus === 'approved' && activation.enrollmentId) {
+                try {
+
+                } catch (enrollError) {
+                    console.error('Error updating enrollment:', enrollError);
+                    // Continue with success message since activation was updated
+                }
+            }
+
             toast.success('تم تحديث الحالة بنجاح');
-            fetchActivations();
+            await fetchActivations(); // Refresh the list
         } catch (error) {
-            toast.error('حدث خطأ أثناء تحديث الحالة');
+            console.error('Error in handleStatusChange:', error);
+            // Even if there's an error, check if the update actually succeeded
+            await fetchActivations();
+            const updatedActivation = (await GlobalApi.getActivationData())
+                .actvition?.activit
+                .find(a => a.id === activationId);
+                
+            if (updatedActivation?.status === newStatus) {
+                toast.success('تم تحديث الحالة بنجاح');
+            } else {
+                toast.error('فشل تحديث الحالة');
+            }
         }
     };
 
@@ -258,12 +350,7 @@ const StudentActivation = () => {
                 return;
             }
 
-            // First create the enrollment
-            const enrollResponse = await GlobalApi.sendEnrollData(
-                selectedCourse.nicknameforcourse,
-                newActivation.userEmail,
-                newActivation.phoneNumber
-            );
+           
 
             // Then create and save the activation with approved status
             await GlobalApi.saveNewActivation({
@@ -278,8 +365,7 @@ const StudentActivation = () => {
             });
 
             // Activate the enrollment
-            await GlobalApi.editStateSub(enrollResponse.createUserEnroll.id, true);
-
+ 
             toast.success('تم إضافة وتفعيل الطالب بنجاح');
             setIsModalOpen(false);
             setNewActivation({
@@ -318,6 +404,49 @@ const StudentActivation = () => {
             // ...rest of the code...
         }
     };
+
+    const ExportButtons = () => (
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:gap-4">
+            <button
+                onClick={handleExport}
+                className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-emerald-500/20 text-emerald-400 rounded-xl"
+            >
+                <FaFileExport /> <span className="hidden sm:inline">تصدير Excel</span>
+            </button>
+            
+            <button
+                onClick={handleDownloadJson}
+                className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-blue-500/20 text-blue-400 rounded-xl"
+            >
+                <FaDownload /> <span className="hidden sm:inline">تحميل التفعيلات</span>
+            </button>
+
+            <div className="relative  h-full">
+                <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleUploadJson}
+                    className="hidden"
+                    id="jsonUpload"
+                />
+                <label
+                    htmlFor="jsonUpload"
+                    className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-orange-500/20 text-orange-400 rounded-xl cursor-pointer hover:bg-orange-500/30 transition-all"
+                >
+                    <FaUpload /> <span className="hidden sm:inline">رفع التفعيلات </span>
+                </label>
+            </div>
+            
+            
+
+            <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl"
+            >
+                <FaPlus /> <span className="hidden sm:inline">إضافة تفعيل يدوي</span>
+            </button>
+        </div>
+    );
 
     return (
         <div className="space-y-4  font-arabicUI3 lg:space-y-6 p-2 lg:p-0" dir="rtl">
@@ -515,21 +644,7 @@ const StudentActivation = () => {
                     </div>
 
                     {/* Action Buttons - Stack on mobile */}
-                    <div className="grid grid-cols-2 gap-2 lg:flex lg:gap-4">
-                        <button
-                            onClick={handleExport}
-                            className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-emerald-500/20 text-emerald-400 rounded-xl"
-                        >
-                            <FaFileExport /> <span className="hidden sm:inline">تصدير البيانات</span>
-                        </button>
-
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl"
-                        >
-                            <FaPlus /> <span className="hidden sm:inline">إضافة تفعيل يدوي</span>
-                        </button>
-                    </div>
+                    <ExportButtons />
                 </div>
 
                 {/* Advanced Filters - Stack on mobile */}
@@ -840,6 +955,19 @@ const StatusBadge = ({ status }) => {
 const ActionButton = ({ activation, onStatusChange }) => {
     let buttonStyle = '';
     let buttonText = '';
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+    const handleDelete = async () => {
+        try {
+            await GlobalApi.deleteActivation(activation.id);
+            toast.success('تم حذف التفعيل بنجاح');
+            // Refresh the activations list
+            await fetchActivations();
+        } catch (error) {
+            toast.error('حدث خطأ أثناء حذف التفعيل');
+        }
+        setShowConfirmDelete(false);
+    };
 
     switch (activation.status) {
         case 'approved':
@@ -856,15 +984,41 @@ const ActionButton = ({ activation, onStatusChange }) => {
     }
 
     return (
-        <button
-            onClick={() => onStatusChange(
-                activation.id,
-                activation.status === 'approved' ? 'rejected' : 'approved'
+        <div className="flex gap-2">
+            <button
+                onClick={() => onStatusChange(
+                    activation.id,
+                    activation.status === 'approved' ? 'rejected' : 'approved'
+                )}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${buttonStyle}`}
+            >
+                {buttonText}
+            </button>
+         
+
+            {showConfirmDelete && (
+                <div className="fixed inset-0  bg-black/50 flex items-center justify-center backdrop-blur-sm p-4 z-50">
+                    <div className="bg-gray-800/90 p-6 rounded-xl border border-white/10 max-w-md w-full">
+                        <h3 className="text-lg text-white mb-4">تأكيد الحذف</h3>
+                        <p className="text-white/70 mb-6">هل أنت متأكد من حذف هذا التفعيل؟ لا يمكن التراجع عن هذا الإجراء.</p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowConfirmDelete(false)}
+                                className="px-4 py-2 bg-white/5 text-white/70 hover:bg-white/10 rounded-lg"
+                            >
+                                إلغاء
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                            >
+                                حذف
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
-            className={`px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${buttonStyle}`}
-        >
-            {buttonText}
-        </button>
+        </div>
     );
 };
 

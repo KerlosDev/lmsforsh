@@ -16,6 +16,11 @@ import CourseManager from './CourseManager';
 import { IoClose } from "react-icons/io5";
 import NotificationManager from './NotificationManager';
 import EditOfferComponent from './EditOfferComponent';
+import BookOrders from './BookOrders';
+import { IoBookSharp } from "react-icons/io5";
+import BooksManager from './BooksManager';
+import AdminBooks from './AdminBooks';
+
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
     const [email, setEmail] = useState('');
@@ -85,12 +90,7 @@ const Admin = () => {
 
     const emailsPerPage = 5; // Emails to show per page
 
-    const updateStateoOfSub = () => {
-        GlobalApi.editStateSub(idOfEnroll, activeornot).then(req => {
-            console.log(req)
-        })
-        publishEnrolls()
-    }
+   
 
     const publishEnrolls = () => {
         GlobalApi.publishEnrolls().then(req => {
@@ -248,17 +248,14 @@ const Admin = () => {
         }
     };
 
-    const handleActive = (index) => {
-        setActiveBar(index)
-    }
+    
 
     const handleIdOfEnroll = async (idOfEnroll, state) => {
         if (loadingAction) return; // Prevent multiple simultaneous actions
         setLoadingAction(true);
         setOfEnroll(idOfEnroll);
         setActiveOrNot(state);
-        try {
-            await GlobalApi.editStateSub(idOfEnroll, state);
+        try { 
             await dataAdmin(); // Refresh data after successful action
 
             // Update isHePaid for the user's email
@@ -314,8 +311,7 @@ const Admin = () => {
             try {
                 await GlobalApi.sendEnroll4Admin(selectedCourse, manualEmail, formattedData);
                 // Automatically set the enrollment as active
-                await GlobalApi.editStateSub(enrollmentData[0].enrollmentId, true);
-
+ 
                 await dataAdmin();
                 setShowCourseDialog(false);
                 setSelectedCourse('');
@@ -477,6 +473,18 @@ const Admin = () => {
                                     <FaBell className="ml-2" />
                                     <span className="font-arabicUI3">الإشعارات</span>
                                 </button>
+ 
+
+                                <button
+                                    onClick={() => setActiveSection('booksManage')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                    ${activeSection === 'booksManage' ? 'bg-blue-500 text-white' : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <IoBookSharp className="ml-2" />
+                                    <span className="font-arabicUI3">إدارة الكتب</span>
+                                </button>
+
+                               
                             </nav>
                         </div>
 
@@ -533,6 +541,12 @@ const Admin = () => {
                                 <EditOfferComponent />
                             ) : activeSection === 'notifications' ? (
                                 <NotificationManager />
+                            ) : activeSection === 'books' ? (
+                                <BookOrders />
+                            ) : activeSection === 'booksManage' ? (
+                                <AdminBooks />
+                            ) : activeSection === 'bookOrders' ? (
+                                <BookOrders />
                             ) : null}
                         </div>
                     </div>

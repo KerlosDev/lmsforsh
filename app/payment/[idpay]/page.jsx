@@ -52,36 +52,43 @@ const Page = ({ params }) => {
     }, [user]);
 
     const handleclicknum = async () => {
-        if (!user || number.length < 10) return;
+        if (!user) return;
 
         setLoading(true);
         try {
-            // First save the enrollment
-            const enrollResponse = await GlobalApi.sendEnrollData(
-                courseInfo?.nicknameforcourse,
-                user?.primaryEmailAddress?.emailAddress,
-                number
-            );
+            if (courseInfo?.isfree) {
+                // Handle free course enrollment
 
-            // Then save the activation request
-            await GlobalApi.saveNewActivation({
-                enrollmentId: enrollResponse.createUserEnroll.id,
-                userEmail: user?.primaryEmailAddress?.emailAddress,
-                userName: user?.firstName,
-                phoneNumber: number,
-                courseName: courseInfo?.nameofcourse,
-                courseId: courseInfo?.nicknameforcourse,
-                price: courseInfo?.price
-            });
 
-            setshowmodel(true);
+                if (result?.createUserEnroll?.id) {
+                    setshowmodel(true);
+                    toast.success("تم التسجيل في الكورس بنجاح");
+                }
+            } else {
+                // Handle paid course enrollment
+                if (number.length < 10) return;
+
+                const uniqueEnrollId = `enr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                await GlobalApi.saveNewActivation({
+                    enrollmentId: uniqueEnrollId,
+                    userEmail: user?.primaryEmailAddress?.emailAddress,
+                    userName: user?.firstName,
+                    phoneNumber: number,
+                    status: 'pending',
+                    courseName: courseInfo?.nameofcourse,
+                    courseId: courseInfo?.nicknameforcourse,
+                    price: courseInfo?.price
+                });
+                setshowmodel(true);
+            }
         } catch (error) {
-            console.error("Error processing payment:", error);
+            console.error("Error processing enrollment:", error);
             toast.error("حدث خطأ أثناء معالجة الطلب");
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {

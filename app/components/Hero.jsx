@@ -4,6 +4,7 @@ import { FaLightbulb } from "react-icons/fa";
 import { GiTakeMyMoney, GiMolecule, GiChemicalDrop } from "react-icons/gi";
 import { IoMdFlask } from "react-icons/io";
 import { FaAtom, FaFlask, FaMicroscope } from "react-icons/fa";
+import Link from 'next/link';
 
 const Hero = () => {
     return (
@@ -163,7 +164,30 @@ const Hero = () => {
 
 
                         {/* Promotional Banner - Enhanced for all screens */}
-                     
+                        <div dir='rtl' className="relative group">
+                            <div className="bg-gradient-to-br from-yellow-500/20 to-red-500/20 p-4 sm:p-6 rounded-2xl 
+                                          border border-yellow-500/30 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                                <div className="flex flex-col sm:flex-row items-center gap-4">
+                                    <div className="flex-1 space-y-2">
+                                        <h3 className="text-xl sm:text-2xl font-arabicUI2 text-yellow-600 dark:text-yellow-400">
+                                            احصل على كتاب الكيمياء الآن!
+                                        </h3>
+                                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300">
+                                            كتاب شامل يغطي جميع المواضيع بأسلوب سهل وممتع
+                                        </p>
+                                    </div>
+                                    <Link
+                                        href="/book-order"
+                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-full 
+                                                 font-arabicUI3 text-lg transition-colors duration-300 
+                                                 flex items-center gap-2"
+                                    >
+                                        <span>اطلب الآن</span>
+                                        <GiTakeMyMoney className="text-xl" />
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -24,13 +24,32 @@ const Courses = () => {
         })
     }
 
-    const handleSubscribe = (nickname) => {
+    const handleSubscribe = async (nickname) => {
         if (!isSignedIn || !userId) {
             router.push('/sign-up');
             return;
         }
 
-        router.push(`/payment/${nickname}`);
+        const course = datacourse.find(c => c.nicknameforcourse === nickname);
+        
+        if (course?.isfree) {
+            try {
+                const userInfo = {
+                    email: userId,
+                    fullName: userId // You might want to get actual user name from Clerk
+                };
+                
+            
+                
+                // Redirect to course page after successful enrollment
+                router.push(`/Courses/${nickname}`);
+            } catch (error) {
+                console.error('Error enrolling in free course:', error);
+                // You might want to show an error message to the user
+            }
+        } else {
+            router.push(`/payment/${nickname}`);
+        }
     };
 
     return (
@@ -103,7 +122,9 @@ const Courses = () => {
 
                 {/* Courses Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 rtl-grid">
-                    {datacourse.map((item, index) => (
+                    {datacourse
+                        .filter(course => !course.isDraft) // Only show non-draft courses
+                        .map((item, index) => (
 
                         <div key={index}
                             className="group relative bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl rounded-xl sm:rounded-2xl overflow-hidden
