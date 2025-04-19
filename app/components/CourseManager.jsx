@@ -30,7 +30,8 @@ const CourseManager = () => {
         exam: {                 // exam, Multiple values, One-way reference
             title: '',
             jsonexam: ''
-        }
+        },
+        classId: '', // Add this line
     });
     const [chapters, setChapters] = useState([{ nameofchapter: '', linkOfVideo: '' }]);
     const [exams, setExams] = useState([]);
@@ -44,12 +45,17 @@ const CourseManager = () => {
     const [courseExams, setCourseExams] = useState({});
     const [examOrder, setExamOrder] = useState([]); // Add this state
     const [filterState, setFilterState] = useState('all'); // 'all', 'published', 'draft'
+    const [classes, setClasses] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('');
+    const [showClassModal, setShowClassModal] = useState(false);
+    const [newClassName, setNewClassName] = useState('');
 
     useEffect(() => {
         fetchCourses();
         fetchExams();
         fetchAllChapters();
         fetchExamOrders();
+        fetchClasses(); // Add this line
     }, []);
 
     const fetchCourses = async () => {
@@ -111,6 +117,23 @@ const CourseManager = () => {
         }
     };
 
+    const fetchClasses = async () => {
+        try {
+            const result = await GlobalApi.getClassCourses();
+            let classData;
+            try {
+                // Parse the JSON string from classCourse
+                classData = JSON.parse(result.classCourse.classCourse || '[]');
+            } catch (e) {
+                classData = [];
+            }
+            setClasses(classData);
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+            toast.error('Failed to fetch classes');
+        }
+    };
+
     const handleEdit = async (course) => {
         try {
             console.log('Original course data:', course);
@@ -129,7 +152,8 @@ const CourseManager = () => {
                 ...course,
                 description: course.description || '',
                 exam: course.exam?.[0] || null,
-                isDraft: course.isDraft || false // Ensure isDraft is included with default value
+                isDraft: course.isDraft || false,
+                classId: course.classOfCourse || '' // Add this line to set the classId from classOfCourse
             };
 
             console.log('Setting editingCourse:', editData);
@@ -181,12 +205,19 @@ const CourseManager = () => {
                 isDraft: Boolean(editingCourse.isDraft), // Ensure isDraft is included
                 nicknameforcourse: editingCourse.nicknameforcourse,
                 chapters: editingChapters, // Include chapters in the update
-                exams: selectedExams
+                exams: selectedExams,
+                classOfCourse: editingCourse.classId // Update this line
             };
 
             console.log('Sending update with:', updatedCourse);
 
             const result = await GlobalApi.updateCourse(editingCourse.id, updatedCourse);
+
+            // Then update the class association
+            if (editingCourse.classId) {
+                await GlobalApi.updateCourseClass(editingCourse.id, editingCourse.classId);
+            }
+
             console.log('Update result:', result);
 
             if (result?.updateCourse?.id) {
@@ -233,9 +264,15 @@ const CourseManager = () => {
                 chapters: chapters.filter(ch => ch.nameofchapter && ch.linkOfVideo), // Only include non-empty chapters
                 selectedExam: selectedExam,
                 exams: selectedExams, // Update to use multiple exams
+                classOfCourse: newCourse.classId // Update this line
             };
 
             const result = await GlobalApi.createCourse(courseData);
+
+            // If course is created successfully and has a class, update the class association
+            if (result?.createCourse?.id && newCourse.classId) {
+                await GlobalApi.updateCourseClass(result.createCourse.id, newCourse.classId);
+            }
 
             if (result?.createCourse?.id) {
                 toast.success('Course added successfully');
@@ -261,7 +298,8 @@ const CourseManager = () => {
             nicknameforcourse: '',
             isDraft: false, // Add this line
             chapterMood: { nameofchapter: '', linkOfVideo: '' },
-            exam: { title: '', jsonexam: '' }
+            exam: { title: '', jsonexam: '' },
+            classId: '', // Add this line
         });
         setChapters([{ nameofchapter: '', linkOfVideo: '' }]);
         setSelectedExam(null);
@@ -345,6 +383,11 @@ const CourseManager = () => {
                 break;
         }
 
+        // Apply class filter if selected
+        if (selectedClass) {
+            filtered = filtered.filter(course => course.classOfCourse === selectedClass); // Update this line
+        }
+
         // Apply sorting
         switch (sortBy) {
             case 'newest':
@@ -411,7 +454,7 @@ const CourseManager = () => {
 
             // Save to backend
             await GlobalApi.updateAllCourses(jsonData);
-            
+
             toast.success('تم تحديث البيانات بنجاح');
             await fetchCourses(); // Refresh data
             await fetchAllChapters();
@@ -420,7 +463,7 @@ const CourseManager = () => {
             console.error('Upload error:', error);
             toast.error('حدث خطأ في تنسيق الملف أو تحميله');
         }
-        
+
         // Reset file input
         event.target.value = '';
     };
@@ -447,7 +490,7 @@ const CourseManager = () => {
                 {/* Form Content - Reduce padding */}
                 <div className="p-4">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                        
+
                         {/* Rest of the form structure remains the same */}
                         <div className="lg:col-span-4 space-y-4">
                             <h4 className="text-lg font-arabicUI3 text-white/90 flex items-center gap-2 mb-6">
@@ -569,8 +612,9 @@ const CourseManager = () => {
                                     focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all h-32"
                                 placeholder="وصف الكورس"
                             />
+                            {renderEditClassSelect()} {/* Add this line */}
                             {/* Add this toggle for draft status */}
-                            
+
                         </div>
 
                         {/* Chapters Column */}
@@ -921,6 +965,117 @@ const CourseManager = () => {
         </div>
     );
 
+    // Update renderClassSelect function
+    const renderClassSelect = () => (
+        <div className="mb-4">
+            <label className="block text-white mb-2 font-arabicUI3">تصنيف الكورس</label>
+            <div className="flex gap-2">
+                <select
+                    value={newCourse.classId}
+                    onChange={(e) => setNewCourse({ ...newCourse, classId: e.target.value })}
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white [&>option]:text-black"
+                >
+                    <option value="" className="text-black">اختر التصنيف</option>
+                    {classes.map((cls) => (
+                        <option key={cls.id} value={cls.id} className="text-black">
+                            {cls.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={() => setShowClassModal(true)}
+                    className="px-4 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 
+                             flex items-center gap-2"
+                >
+                    <FaPlus size={14} />
+                    <span>جديد</span>
+                </button>
+            </div>
+        </div>
+    );
+
+    // Update renderEditClassSelect function
+    const renderEditClassSelect = () => (
+        <div className="mb-4">
+            <label className="block text-white mb-2 font-arabicUI3">تصنيف الكورس</label>
+            <div className="flex gap-2">
+                <select
+                    value={editingCourse.classId || ''}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, classId: e.target.value })}
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white [&>option]:text-black"
+                >
+                    <option value="" className="text-black">اختر التصنيف</option>
+                    {classes.map((cls) => (
+                        <option key={cls.id} value={cls.id} className="text-black">
+                            {cls.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={() => setShowClassModal(true)}
+                    className="px-4 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 
+                             flex items-center gap-2"
+                >
+                    <FaPlus size={14} />
+                    <span>جديد</span>
+                </button>
+            </div>
+        </div>
+    );
+
+    const handleCreateClass = async () => {
+        try {
+            if (!newClassName.trim()) {
+                toast.error('Please enter a class name');
+                return;
+            }
+
+            const result = await GlobalApi.createClassCourse(newClassName);
+            if (result) {
+                toast.success('Class created successfully');
+                setNewClassName('');
+                setShowClassModal(false);
+                fetchClasses(); // Refresh classes
+            }
+        } catch (error) {
+            console.error('Error creating class:', error);
+            toast.error('Failed to create class');
+        }
+    };
+
+    const renderClassModal = () => (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-900 rounded-xl w-full max-w-md border border-white/10 shadow-2xl">
+                <div className="p-4 border-b border-white/10">
+                    <h3 className="text-xl font-arabicUI3 text-white">إضافة تصنيف جديد</h3>
+                </div>
+                <div className="p-4">
+                    <input
+                        type="text"
+                        value={newClassName}
+                        onChange={(e) => setNewClassName(e.target.value)}
+                        placeholder="اسم التصنيف"
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white mb-4"
+                    />
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setShowClassModal(false)}
+                            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg"
+                        >
+                            إلغاء
+                        </button>
+                        <button
+                            onClick={handleCreateClass}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                        >
+                            إضافة
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen font-arabicUI3 bg-gradient-to-br from-gray-900 rounded-xl via-gray-800 to-gray-900 p-6">
             {/* Enhanced Dashboard Header */}
@@ -1024,80 +1179,97 @@ const CourseManager = () => {
                     </div>
 
                     {/* Add this filter bar after the stats section */}
-                    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between border-t border-white/10 pt-8 gap-4">
-                        <div className="flex items-center gap-4 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-                            <button
-                                onClick={() => setFilterState('all')}
-                                className={`px-4 py-2 rounded-lg transition-all whitespace-nowrap
-                                    ${filterState === 'all'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                            >
-                                كل الكورسات ({courses.length})
-                            </button>
-                            <button
-                                onClick={() => setFilterState('published')}
-                                className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap
-                                    ${filterState === 'published'
-                                        ? 'bg-green-500/20 text-green-400'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                            >
-                                <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                                منشور ({courses.filter(c => !c.isDraft).length})
-                            </button>
-                            <button
-                                onClick={() => setFilterState('draft')}
-                                className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap
-                                    ${filterState === 'draft'
-                                        ? 'bg-yellow-500/20 text-yellow-400'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                            >
-                                <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
-                                مسودة ({courses.filter(c => c.isDraft).length})
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <span className="whitespace-nowrap">ترتيب حسب:</span>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white
-                                    focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                            >
-                                <option value="newest">الأحدث</option>
-                                <option value="oldest">الأقدم</option>
-                                <option value="name">الإسم</option>
-                            </select>
-                        </div>
-                    </div>
 
-                 
+
+
                 </motion.div>
 
-                <div className="flex flex-wrap gap-4 mt-8 border-t border-white/10 pt-8">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 
-                                rounded-xl text-white flex items-center gap-2"
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-between border-t border-white/10 pt-8 gap-4">
+                    <div className="flex items-center gap-4 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
+                        <button
+                            onClick={() => setFilterState('all')}
+                            className={`px-4 py-2 rounded-lg transition-all whitespace-nowrap
+                                    ${filterState === 'all'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
-                            <FaPlus className="text-blue-200" />
-                            <span>إضافة كورس</span>
-                        </motion.button>
-
-                        <button  
-                            onClick={handleDownloadJson}
-                            className="px-6 py-3 bg-gradient-to-r hover:scale-105 from-green-600/20 to-green-700/20 
-                                rounded-xl text-green-400 flex items-center gap-2 border border-green-500/20"
-                        >
-                            <FaDownload />
-                            <span>تحميل JSON</span>
+                            كل الكورسات ({courses.length})
                         </button>
-
-                       
+                        <button
+                            onClick={() => setFilterState('published')}
+                            className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap
+                                    ${filterState === 'published'
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                            منشور ({courses.filter(c => !c.isDraft).length})
+                        </button>
+                        <button
+                            onClick={() => setFilterState('draft')}
+                            className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap
+                                    ${filterState === 'draft'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+                            مسودة ({courses.filter(c => c.isDraft).length})
+                        </button>
                     </div>
-                
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="whitespace-nowrap">ترتيب حسب:</span>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white
+                                    focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        >
+                            <option value="newest">الأحدث</option>
+                            <option value="oldest">الأقدم</option>
+                            <option value="name">الإسم</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-4 mt-8 border-t border-white/10 pt-8">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsModalOpen(true)}
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 
+                                rounded-xl text-white flex items-center gap-2"
+                    >
+                        <FaPlus className="text-blue-200" />
+                        <span>إضافة كورس</span>
+                    </motion.button>
+
+                    <button
+                        onClick={handleDownloadJson}
+                        className="px-6 py-3 bg-gradient-to-r hover:scale-105 from-green-600/20 to-green-700/20 
+                                rounded-xl text-green-400 flex items-center gap-2 border border-green-500/20"
+                    >
+                        <FaDownload />
+                        <span>تحميل JSON</span>
+                    </button>
+
+
+                </div>
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                    {/* ...existing filter buttons... */}
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => setSelectedClass(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    >
+                        <option value="">All Classes</option>
+                        {classes.map((cls) => (
+                            <option key={cls.id} value={cls.id}>
+                                {cls.classCourse}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
             </div>
             {/* ... rest of the existing code ... */}
             {/* Course Grid with enhanced animation */}
@@ -1156,35 +1328,35 @@ const CourseManager = () => {
                                 {/* Left Column - Basic Info */}
                                 <div className="lg:col-span-4 space-y-4">
                                     <h4 className="text-lg font-arabicUI3 text-white mb-4">المعلومات الأساسية</h4>
-                                   
-                                   
-                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/10 
-                                to-yellow-600/10 rounded-xl border border-yellow-500/20">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-yellow-500/20">
-                                            <FaArchive className="text-yellow-400 text-lg" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-white font-medium">وضع المسودة</h4>
-                                            <p className="text-gray-400 text-sm">الكورس غير مرئي للطلاب</p>
-                                        </div>
-                                    </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={newCourse.isDraft}
-                                            onChange={(e) => setNewCourse({ ...newCourse, isDraft: e.target.checked })}
 
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-14 h-7 bg-gray-600 peer-focus:outline-none 
+
+                                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/10 
+                                to-yellow-600/10 rounded-xl border border-yellow-500/20">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-yellow-500/20">
+                                                <FaArchive className="text-yellow-400 text-lg" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-white font-medium">وضع المسودة</h4>
+                                                <p className="text-gray-400 text-sm">الكورس غير مرئي للطلاب</p>
+                                            </div>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCourse.isDraft}
+                                                onChange={(e) => setNewCourse({ ...newCourse, isDraft: e.target.checked })}
+
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-14 h-7 bg-gray-600 peer-focus:outline-none 
                                         rounded-full peer peer-checked:after:translate-x-full 
                                         after:content-[''] after:absolute after:top-0.5 after:left-[4px] 
                                         after:bg-white after:rounded-full after:h-6 after:w-6 
                                         after:transition-all peer-checked:bg-yellow-500">
-                                        </div>
-                                    </label>
-                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
                                     <input
                                         type="text"
                                         placeholder="اسم الكورس"
@@ -1251,7 +1423,7 @@ const CourseManager = () => {
                                         onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                                         className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white h-32"
                                     />
-                                     
+                                    {renderClassSelect()} {/* Add this line */}
                                 </div>
 
                                 {/* Middle Column - Chapters */}
@@ -1344,6 +1516,7 @@ const CourseManager = () => {
                     </div>
                 </div>
             )}
+            {showClassModal && renderClassModal()}
         </div>
     );
 };

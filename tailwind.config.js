@@ -12,6 +12,11 @@ module.exports = {
                 tilt: 'tilt 10s infinite linear',
                 'flow': 'flow 4s ease-in-out infinite',
                 'premium-grid': 'premium-grid 3s linear infinite',
+                'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'float-fast': 'float 3s ease-in-out infinite',
+                'float-slower': 'float 6s ease-in-out infinite',
+                'wave': 'wave 8s ease-in-out infinite',
+                'wave-delayed': 'wave 8s ease-in-out infinite 1s',
             },
             keyframes: {
                 tilt: {
@@ -26,7 +31,15 @@ module.exports = {
                 'premium-grid': {
                     '0%': { backgroundPosition: '0 0' },
                     '100%': { backgroundPosition: '-20px -20px' },
-                }
+                },
+                'pulse-subtle': {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.7 },
+                },
+                wave: {
+                    '0%, 100%': { transform: 'scaleY(1.2) translateY(-10px)' },
+                    '50%': { transform: 'scaleY(0.8) translateY(10px)' },
+                },
             },
             dropShadow: {
                 white: '0 4px 6px rgba(255, 255, 255, 0.5)',

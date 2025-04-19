@@ -15,6 +15,7 @@ const getAllCourseList = async () => {
         updatedAt
         dataofcourse
         isDraft
+        classOfCourse
       }
     }
   `;
@@ -53,7 +54,7 @@ const getcourseinfo = async (courseid) => {
     return { course: null }; // Return null course instead of throwing
   }
 };
- 
+
 
 const getQuizDataWithEnroll = async (userEmail, quizId) => {
   const query5 = gql`
@@ -348,7 +349,7 @@ const sendExamData = async (formattedData, examTitle) => {
 };
 
 
- 
+
 
 const getPaymentLogs = async () => {
   const query = gql`
@@ -670,15 +671,15 @@ const createCourse = async (courseData) => {
 };
 
 const updateCourse = async (courseId, courseData) => {
-    try {
-        if (!courseId) throw new Error('Course ID is required');
+  try {
+    if (!courseId) throw new Error('Course ID is required');
 
-        // Escape special characters in strings
-        const escapedTitle = courseData.nameofcourse?.replace(/"/g, '\\"') || '';
-        const escapedDesc = courseData.description?.replace(/"/g, '\\"') || '';
-        const escapedNickname = courseData.nicknameforcourse?.replace(/"/g, '\\"') || '';
+    // Escape special characters in strings
+    const escapedTitle = courseData.nameofcourse?.replace(/"/g, '\\"') || '';
+    const escapedDesc = courseData.description?.replace(/"/g, '\\"') || '';
+    const escapedNickname = courseData.nicknameforcourse?.replace(/"/g, '\\"') || '';
 
-        const mutation = gql`
+    const mutation = gql`
             mutation UpdateCourse {
                 updateCourse(
                     where: { id: "${courseId}" }
@@ -704,24 +705,24 @@ const updateCourse = async (courseId, courseData) => {
             }
         `;
 
-        const result = await request(MASTER_URL, mutation);
+    const result = await request(MASTER_URL, mutation);
 
-        // Publish the updated course
-        if (result?.updateCourse?.id) {
-            await request(MASTER_URL, gql`
+    // Publish the updated course
+    if (result?.updateCourse?.id) {
+      await request(MASTER_URL, gql`
                 mutation PublishCourse {
                     publishCourse(where: { id: "${courseId}" }) {
                         id
                     }
                 }
             `);
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Update course error:', error);
-        throw error;
     }
+
+    return result;
+  } catch (error) {
+    console.error('Update course error:', error);
+    throw error;
+  }
 };
 
 // Initialize chapter data if not exists
@@ -870,7 +871,7 @@ const updateCourseChapters = async (courseNickname, chapters) => {
 };
 
 const getExamOrder = async () => {
-    const query = gql`
+  const query = gql`
         query GetExamOrder {
             examOrder(where: {id: "cm9fhma8u1xs207pme97r16aw"}) {
                 examJsonOrder
@@ -878,36 +879,36 @@ const getExamOrder = async () => {
         }
     `;
 
-    try {
-        const result = await request(MASTER_URL, query);
-        if (!result?.examOrder?.examJsonOrder) {
-            return { examOrders: [] };
-        }
-
-        // Parse the JSON string and ensure it has the right structure
-        let examData;
-        try {
-            examData = typeof result.examOrder.examJsonOrder === 'string' 
-                ? JSON.parse(result.examOrder.examJsonOrder)
-                : result.examOrder.examJsonOrder;
-
-            // Ensure examOrders is an array with the required fields
-            const examOrders = examData.examOrders?.map(order => ({
-                examId: order.examId || '',
-                courseNickname: order.courseNickname || '',
-                order: order.order || 0,
-                title: order.title || ''
-            })) || [];
-
-            return { examOrders };
-        } catch (e) {
-            console.error('Error parsing exam orders:', e);
-            return { examOrders: [] };
-        }
-    } catch (error) {
-        console.error('Error fetching exam orders:', error);
-        return { examOrders: [] };
+  try {
+    const result = await request(MASTER_URL, query);
+    if (!result?.examOrder?.examJsonOrder) {
+      return { examOrders: [] };
     }
+
+    // Parse the JSON string and ensure it has the right structure
+    let examData;
+    try {
+      examData = typeof result.examOrder.examJsonOrder === 'string'
+        ? JSON.parse(result.examOrder.examJsonOrder)
+        : result.examOrder.examJsonOrder;
+
+      // Ensure examOrders is an array with the required fields
+      const examOrders = examData.examOrders?.map(order => ({
+        examId: order.examId || '',
+        courseNickname: order.courseNickname || '',
+        order: order.order || 0,
+        title: order.title || ''
+      })) || [];
+
+      return { examOrders };
+    } catch (e) {
+      console.error('Error parsing exam orders:', e);
+      return { examOrders: [] };
+    }
+  } catch (error) {
+    console.error('Error fetching exam orders:', error);
+    return { examOrders: [] };
+  }
 };
 
 const updateExamOrder = async (newData) => {
@@ -1061,27 +1062,27 @@ const deleteActivation = async (activationId) => {
 const updateAllCourses = async (data) => {
   // For each course in the data
   try {
-      for (const course of data.courses) {
-          // Update course data
-          await updateCourse(course.id, course);
-      }
+    for (const course of data.courses) {
+      // Update course data
+      await updateCourse(course.id, course);
+    }
 
-      // If there are chapters, update them
-      if (data.chapters) {
-          for (const [courseNickname, chapters] of Object.entries(data.chapters)) {
-              await updateCourseChapters(courseNickname, chapters);
-          }
+    // If there are chapters, update them
+    if (data.chapters) {
+      for (const [courseNickname, chapters] of Object.entries(data.chapters)) {
+        await updateCourseChapters(courseNickname, chapters);
       }
+    }
 
-      // If there are exams, update them
-      if (data.exams) {
-          await updateExamOrder(data.exams);
-      }
+    // If there are exams, update them
+    if (data.exams) {
+      await updateExamOrder(data.exams);
+    }
 
-      return { success: true };
+    return { success: true };
   } catch (error) {
-      console.error('Error updating courses:', error);
-      throw error;
+    console.error('Error updating courses:', error);
+    throw error;
   }
 };
 
@@ -1137,9 +1138,9 @@ const saveBookOrder = async (orderData) => {
     };
 
     // Check if user has a pending order for the same book
-    const hasPendingOrder = orders.some(order => 
-      order.userEmail === orderData.userEmail && 
-      order.bookId === orderData.bookId && 
+    const hasPendingOrder = orders.some(order =>
+      order.userEmail === orderData.userEmail &&
+      order.bookId === orderData.bookId &&
       order.status === 'pending'
     );
 
@@ -1220,6 +1221,102 @@ const saveBooks = async (booksData) => {
   return await request(MASTER_URL, mutation);
 };
 
+const getClassCourses = async () => {
+  const query = gql`
+    query GetClassCourses {
+      classCourse(where: {id: "cm9odr9sq21nc08o9qu036ubl"}) {
+        id
+        classCourse
+      }
+    }
+  `;
+
+  const result = await request(MASTER_URL, query);
+  return result;
+};
+
+const updateClassCourses = async (classData) => {
+  const mutation = gql`
+    mutation UpdateClassCourses {
+      updateClassCourse(
+        where: { id: "cm9odr9sq21nc08o9qu036ubl" }
+        data: { classCourse: ${JSON.stringify(JSON.stringify(classData))} }
+      ) {
+        id
+      }
+      publishClassCourse(where: { id: "cm9odr9sq21nc08o9qu036ubl" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
+const createClassCourse = async (className) => {
+  try {
+    // Get existing class course data first
+    const result = await getClassCourses();
+    let classes;
+
+    try {
+      // Parse existing data
+      classes = JSON.parse(result.classCourse.classCourse || '[]');
+    } catch (e) {
+      classes = [];
+    }
+
+    // Create new class object
+    const newClass = {
+      id: `class-${Date.now()}`,
+      name: className,
+      createdAt: new Date().toISOString()
+    };
+
+    // Add to classes array
+    classes.push(newClass);
+
+    // Update class courses
+    const mutation = gql`
+      mutation UpdateClassCourse {
+        updateClassCourse(
+          where: { id: "cm9odr9sq21nc08o9qu036ubl" }
+          data: { classCourse: ${JSON.stringify(JSON.stringify(classes))} }
+        ) {
+          id
+        }
+        publishClassCourse(where: { id: "cm9odr9sq21nc08o9qu036ubl" }) {
+          id
+        }
+      }
+    `;
+
+    const updateResult = await request(MASTER_URL, mutation);
+    return updateResult;
+  } catch (error) {
+    console.error('Error creating class:', error);
+    throw error;
+  }
+};
+
+const updateCourseClass = async (courseId, classId) => {
+  const mutation = gql`
+    mutation UpdateCourseClass {
+      updateCourse(
+        where: { id: "${courseId}" }
+        data: { classOfCourse: "${classId}" }
+      ) {
+        id
+      }
+      publishCourse(where: { id: "${courseId}" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
 export default {
   getOffer,
   addQuiz,
@@ -1231,7 +1328,7 @@ export default {
   sendExamData,
   sendEnroll4Admin,
   getAllCourseList,
-  getcourseinfo, 
+  getcourseinfo,
   getQuizDataWithEnroll,
   SaveGradesOfQuiz,
   data4admin,
@@ -1242,7 +1339,7 @@ export default {
   updateExam,
   getQuizJsonResult,
   getQuizResults,
-  updateQuizResults, 
+  updateQuizResults,
   getActivationData,
   updateActivationData,
   saveNewActivation,
@@ -1269,4 +1366,8 @@ export default {
   updateBookOrders,
   getBooks,
   saveBooks,
+  getClassCourses,
+  updateClassCourses,
+  createClassCourse, // Add this line
+  updateCourseClass,
 }
