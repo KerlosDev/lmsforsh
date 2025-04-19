@@ -8,6 +8,7 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { FaChalkboardTeacher } from "react-icons/fa";
 import { BiSolidPencil } from "react-icons/bi";
+import Head from 'next/head';
 
 const CoursePageSkeleton = dynamic(() => import('../../components/CoursePageSkeleton'));
 
@@ -110,6 +111,13 @@ const CoursePage = () => {
         initializePage();
     }, [courseid, user]);
 
+    useEffect(() => {
+        // Update the document title when courseInfo changes
+        if (courseInfo.nameofcourse) {
+            document.title = `${courseInfo.nameofcourse} - منصة شهد هاني `;
+        }
+    }, [courseInfo]);
+
     const handlechapterClick = (index) => {
         setActiveIndex(index);
         setActiveIndex2(100);
@@ -139,182 +147,192 @@ const CoursePage = () => {
 
     if (loading) {
         return (
-            <div dir='rtl' className="min-h-screen bg-[#0A1121] text-white font-arabicUI3">
-                <div className="fixed inset-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20" />
-                    <div className="absolute h-full w-full bg-[url('/grid.svg')] opacity-[0.02]" />
+            <>
+                <Head>
+                    <title>جاري التحميل... - شهد هاني</title>
+                </Head>
+                <div dir='rtl' className="min-h-screen bg-[#0A1121] text-white font-arabicUI3">
+                    <div className="fixed inset-0 pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20" />
+                        <div className="absolute h-full w-full bg-[url('/grid.svg')] opacity-[0.02]" />
+                    </div>
+                    <div className="relative max-w-7xl mx-auto px-4 py-8">
+                        <CoursePageSkeleton />
+                    </div>
                 </div>
-                <div className="relative max-w-7xl mx-auto px-4 py-8">
-                    <CoursePageSkeleton />
-                </div>
-            </div>
+            </>
         );
     }
 
     return (
-        <div dir='rtl' className="min-h-screen bg-[#0A1121] text-white font-arabicUI3">
-            {/* Animated Background */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20" />
-                <div className="absolute h-full w-full bg-[url('/grid.svg')] opacity-[0.02]" />
-            </div>
-
-            <div className="relative max-w-7xl mx-auto px-4 py-8">
-                {/* Add UserInfoCard at the top */}
-
-
-                {/* Course Header */}
-                <div className="mb-8">
-                    <div className="flex flex-col md:flex-row gap-8 items-start">
-                        {/* Course Info */}
-                        <div className="flex-1 space-y-4">
-                            <div className="inline-flex items-center gap-2 bg-blue-500/10 px-4 py-2 rounded-full">
-                                <FaChalkboardTeacher className="text-blue-400" />
-                                <span className="text-blue-400">كورس كيمياء</span>
-                            </div>
-                            <h1 className="text-4xl font-bold text-white">{courseInfo.nameofcourse}🧪</h1>
-                            <p className="text-gray-400 text-lg">{courseInfo.description}</p>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <img src="/instructor-avatar.jpg"
-                                        className="w-10 h-10 rounded-full border-2 border-blue-500" />
-                                    <div>
-                                        <p className="text-white">أ/ {courseInfo.instructor}</p>
-                                        <p className="text-sm text-gray-400">مدرس كيمياء</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Enrollment Card */}
-                        <div className="w-full md:w-96">
-                            <EnrollmentSection courseInfo={courseInfo} isCourseFound={isEnrolled} />
-                        </div>
-                    </div>
+        <>
+            <Head>
+                <title>{courseInfo.nameofcourse ? `${courseInfo.nameofcourse} - منصة شهد هاني ` : 'منصة شهد هاني '}</title>
+            </Head>
+            <div dir='rtl' className="min-h-screen bg-[#0A1121] text-white font-arabicUI3">
+                {/* Animated Background */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20" />
+                    <div className="absolute h-full w-full bg-[url('/grid.svg')] opacity-[0.02]" />
                 </div>
 
-                {/* Main Content */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Video Section */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-900">
-                            {courseVideoChapters[activeIndex]?.linkOfVideo && !isContentLocked ? (
-                                <iframe
-                                    className="w-full h-full"
-                                    src={courseVideoChapters[activeIndex]?.linkOfVideo.replace("watch?v=", "embed/")}
-                                    allowFullScreen
-                                />
-                            ) : (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-center">
-                                        <FaLock className="text-4xl text-gray-600 mx-auto mb-4" />
-                                        <p className="text-gray-400">
-                                            {!user ? "قم بتسجيل الدخول للوصول إلى المحتوى" :
-                                                !isEnrolled ? "اشترك في الكورس للوصول إلى المحتوى" :
-                                                    "اختر درساً للمشاهدة"}
-                                        </p>
+                <div className="relative max-w-7xl mx-auto px-4 py-8">
+                    {/* Add UserInfoCard at the top */}
+
+
+                    {/* Course Header */}
+                    <div className="mb-8">
+                        <div className="flex flex-col md:flex-row gap-8 items-start">
+                            {/* Course Info */}
+                            <div className="flex-1 space-y-4">
+                                <div className="inline-flex items-center gap-2 bg-blue-500/10 px-4 py-2 rounded-full">
+                                    <FaChalkboardTeacher className="text-blue-400" />
+                                    <span className="text-blue-400">كورس كيمياء</span>
+                                </div>
+                                <h1 className="text-4xl font-bold text-white">{courseInfo.nameofcourse}🧪</h1>
+                                <p className="text-gray-400 text-lg">{courseInfo.description}</p>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <img src="/prof.jpg"
+                                            className="w-10 h-10 rounded-full border-2 border-blue-500" />
+                                        <div>
+                                            <p className="text-white">أ/ {courseInfo.instructor}</p>
+                                            <p className="text-sm text-gray-400">دكتورة الكيمياء</p>
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
 
-                        {/* Chapter Info */}
-                        <div className="bg-gray-800/50 rounded-xl p-6">
-                            <h2 className="text-xl font-bold text-white mb-4">
-                                {courseVideoChapters[activeIndex]?.nameofchapter}
-                            </h2>
-                            <p className="text-gray-400">
-                                {courseVideoChapters[activeIndex]?.description}
-                            </p>
+                            {/* Enrollment Card */}
+                            <div className="w-full md:w-96">
+                                <EnrollmentSection courseInfo={courseInfo} isCourseFound={isEnrolled} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Chapters List */}
-                    <div className="bg-gray-800/50 rounded-xl h-fit">
-                        <div className="p-4 border-b border-gray-700">
-                            <h3 className="text-lg font-medium text-white">محتويات الكورس</h3>
-                        </div>
-                        <div className="divide-y divide-gray-700 max-h-[400px] overflow-y-auto">
-                            {courseVideoChapters.map((chapter, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handlechapterClick(index)}
-                                    className={`w-full p-4 flex items-center gap-4 hover:bg-gray-700/50 transition
-                                        ${activeIndex === index ? 'bg-blue-500/20' : ''}`}
-                                    disabled={!isEnrolled}
-                                >
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center
-                                        ${activeIndex === index ? 'bg-blue-500' : 'bg-gray-700'}`}>
-                                        {isEnrolled ? <FaPlay className="text-white" /> : <FaLock className="text-gray-400" />}
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-white font-medium">{chapter.nameofchapter} 🧪</p>
-                                        <p className="text-sm text-gray-400">{chapter.duration || '50:00'} دقيقة</p>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Quiz Section */}
-                        <div className="border-t border-gray-700">
-                            <div className="p-4 border-b border-gray-700">
-                                <h3 className="text-lg font-medium text-white">الاختبارات</h3>
-                            </div>
-                            <div className="divide-y divide-gray-700">
-                                {exams?.map((quiz, index) => (
-                                    <Link
-                                        href={isEnrolled ? `/quiz/${quiz.id}` : '#'}
-                                        key={index}
-                                        className={`w-full p-4 flex items-center gap-4 hover:bg-gray-700/50 transition
-                                            ${activeIndex2 === index ? 'bg-blue-500/20' : ''}
-                                            ${!isEnrolled ? 'pointer-events-none opacity-50' : ''}`}
-                                    >
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center
-                                            ${activeIndex2 === index ? 'bg-blue-500' : 'bg-gray-700'}`}>
-                                            {isEnrolled ? <BiSolidPencil className="text-white" /> : <FaLock className="text-gray-400" />}
+                    {/* Main Content */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Video Section */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-900">
+                                {courseVideoChapters[activeIndex]?.linkOfVideo && !isContentLocked ? (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={courseVideoChapters[activeIndex]?.linkOfVideo.replace("watch?v=", "embed/")}
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="text-center">
+                                            <FaLock className="text-4xl text-gray-600 mx-auto mb-4" />
+                                            <p className="text-gray-400">
+                                                {!user ? "قم بتسجيل الدخول للوصول إلى المحتوى" :
+                                                    !isEnrolled ? "اشترك في الكورس للوصول إلى المحتوى" :
+                                                        "اختر درساً للمشاهدة"}
+                                            </p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-white font-medium">{quiz.title} 🧪</p>
-                                            <p className="text-sm text-gray-400">اختبار تفاعلي</p>
-                                        </div>
-                                    </Link>
-                                ))}
-                                {exams?.length === 0 && (
-                                    <div className="p-4 text-center text-gray-400">
-                                        لا يوجد اختبارات متاحة حالياً
                                     </div>
                                 )}
                             </div>
+
+                            {/* Chapter Info */}
+                            <div className="bg-gray-800/50 rounded-xl p-6">
+                                <h2 className="text-xl font-bold text-white mb-4">
+                                    {courseVideoChapters[activeIndex]?.nameofchapter}
+                                </h2>
+                                <p className="text-gray-400">
+                                    {courseVideoChapters[activeIndex]?.description}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Chapters List */}
+                        <div className="bg-gray-800/50 rounded-xl h-fit">
+                            <div className="p-4 border-b border-gray-700">
+                                <h3 className="text-lg font-medium text-white">محتويات الكورس</h3>
+                            </div>
+                            <div className="divide-y divide-gray-700 max-h-[400px] overflow-y-auto">
+                                {courseVideoChapters.map((chapter, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => handlechapterClick(index)}
+                                        className={`w-full p-4 flex items-center gap-4 hover:bg-gray-700/50 transition
+                                        ${activeIndex === index ? 'bg-blue-500/20' : ''}`}
+                                        disabled={!isEnrolled}
+                                    >
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center
+                                        ${activeIndex === index ? 'bg-blue-500' : 'bg-gray-700'}`}>
+                                            {isEnrolled ? <FaPlay className="text-white" /> : <FaLock className="text-gray-400" />}
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-white font-medium">{chapter.nameofchapter} 🧪</p>
+                                            <p className="text-sm text-gray-400">{chapter.duration || '50:00'} دقيقة</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Quiz Section */}
+                            <div className="border-t border-gray-700">
+                                <div className="p-4 border-b border-gray-700">
+                                    <h3 className="text-lg font-medium text-white">الاختبارات</h3>
+                                </div>
+                                <div className="divide-y divide-gray-700">
+                                    {exams?.map((quiz, index) => (
+                                        <Link
+                                            href={isEnrolled ? `/quiz/${quiz.id}` : '#'}
+                                            key={index}
+                                            className={`w-full p-4 flex items-center gap-4 hover:bg-gray-700/50 transition
+                                            ${activeIndex2 === index ? 'bg-blue-500/20' : ''}
+                                            ${!isEnrolled ? 'pointer-events-none opacity-50' : ''}`}
+                                        >
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center
+                                            ${activeIndex2 === index ? 'bg-blue-500' : 'bg-gray-700'}`}>
+                                                {isEnrolled ? <BiSolidPencil className="text-white" /> : <FaLock className="text-gray-400" />}
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-white font-medium">{quiz.title} 🧪</p>
+                                                <p className="text-sm text-gray-400">اختبار تفاعلي</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    {exams?.length === 0 && (
+                                        <div className="p-4 text-center text-gray-400">
+                                            لا يوجد اختبارات متاحة حالياً
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Show login prompt if no user */}
+                {!user && !loading && (
+                    <div className="text-center p-8 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                        <h2 className="text-2xl font-bold mb-4">يرجى تسجيل الدخول</h2>
+                        <p className="text-gray-400 mb-4">قم بتسجيل الدخول للوصول إلى محتوى الكورس</p>
+                        <Link href="/sign-in">
+                            <button className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl">
+                                تسجيل الدخول
+                            </button>
+                        </Link>
+                    </div>
+                )}
+
+                {!isEnrolled && !loading && (
+                    <div className="text-center p-8 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                        <h2 className="text-2xl font-bold mb-4">لم يتم تفعيل الكورس بعد</h2>
+                        <p className="text-gray-400 mb-4">يرجى الانتظار حتى يتم تفعيل اشتراكك</p>
+                        <Link href={`/payment/${courseInfo.nicknameforcourse}`}>
+                            <button className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl">
+                                الذهاب لصفحة الدفع
+                            </button>
+                        </Link>
+                    </div>
+                )}
             </div>
-
-            {/* Show login prompt if no user */}
-            {!user && !loading && (
-                <div className="text-center p-8 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-                    <h2 className="text-2xl font-bold mb-4">يرجى تسجيل الدخول</h2>
-                    <p className="text-gray-400 mb-4">قم بتسجيل الدخول للوصول إلى محتوى الكورس</p>
-                    <Link href="/sign-in">
-                        <button className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl">
-                            تسجيل الدخول
-                        </button>
-                    </Link>
-                </div>
-            )}
-
-            {!isEnrolled && !loading && (
-                <div className="text-center p-8 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-                    <h2 className="text-2xl font-bold mb-4">لم يتم تفعيل الكورس بعد</h2>
-                    <p className="text-gray-400 mb-4">يرجى الانتظار حتى يتم تفعيل اشتراكك</p>
-                    <Link href={`/payment/${courseInfo.nicknameforcourse}`}>
-                        <button className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl">
-                            الذهاب لصفحة الدفع
-                        </button>
-                    </Link>
-                </div>
-            )}
-        </div>
+        </>
     );
 };
 

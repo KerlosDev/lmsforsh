@@ -670,55 +670,58 @@ const createCourse = async (courseData) => {
 };
 
 const updateCourse = async (courseId, courseData) => {
-  try {
-    console.log('Update request received:', { courseId, courseData });
+    try {
+        if (!courseId) throw new Error('Course ID is required');
 
-    if (!courseId || !courseData) {
-      throw new Error('Invalid update data');
-    }
+        // Escape special characters in strings
+        const escapedTitle = courseData.nameofcourse?.replace(/"/g, '\\"') || '';
+        const escapedDesc = courseData.description?.replace(/"/g, '\\"') || '';
+        const escapedNickname = courseData.nicknameforcourse?.replace(/"/g, '\\"') || '';
 
-    const escapedTitle = (courseData.nameofcourse || '').replace(/"/g, '\\"');
-    const escapedDesc = (courseData.description || '').replace(/"/g, '\\"');
-    const escapedNickname = (courseData.nicknameforcourse || '').replace(/"/g, '\\"');
+        const mutation = gql`
+            mutation UpdateCourse {
+                updateCourse(
+                    where: { id: "${courseId}" }
+                    data: {
+                        nameofcourse: "${escapedTitle}"
+                        description: "${escapedDesc}"
+                        price: ${Number(courseData.price) || 0}
+                        isfree: ${Boolean(courseData.isfree)}
+                        isDraft: ${Boolean(courseData.isDraft)}
+                        nicknameforcourse: "${escapedNickname}"
+                        dataofcourse: "${courseData.dataofcourse || new Date().toISOString().split('T')[0]}"
+                    }
+                ) {
+                    id
+                    nameofcourse
+                    description
+                    price
+                    isfree
+                    isDraft
+                    nicknameforcourse
+                    dataofcourse
+                }
+            }
+        `;
 
-    const mutation = gql`
-      mutation UpdateCourse {
-        updateCourse(
-          where: { id: "${courseId}" }
-          data: {
-            nameofcourse: "${escapedTitle}",
-            description: "${escapedDesc}",
-            price: ${courseData.price},
-            isfree: ${courseData.isfree},
-            nicknameforcourse: "${escapedNickname}",
-            isDraft: ${courseData.isDraft}
-          }
-        ) {
-          id
-          nameofcourse
-          description
-          price
-          isfree
-          nicknameforcourse
-          isDraft
+        const result = await request(MASTER_URL, mutation);
+
+        // Publish the updated course
+        if (result?.updateCourse?.id) {
+            await request(MASTER_URL, gql`
+                mutation PublishCourse {
+                    publishCourse(where: { id: "${courseId}" }) {
+                        id
+                    }
+                }
+            `);
         }
-        publishCourse(where: { id: "${courseId}" }) {
-          id
-        }
-      }
-    `;
 
-    console.log('Executing mutation:', mutation);
-    const result = await request(MASTER_URL, mutation);
-    console.log('Update result:', result);
-    if (result?.updateCourse?.id) {
-      await updateCourseChapters(courseData.nicknameforcourse, courseData.chapters);
+        return result;
+    } catch (error) {
+        console.error('Update course error:', error);
+        throw error;
     }
-    return result;
-  } catch (error) {
-    console.error('Update error:', error);
-    throw error;
-  }
 };
 
 // Initialize chapter data if not exists
@@ -867,24 +870,44 @@ const updateCourseChapters = async (courseNickname, chapters) => {
 };
 
 const getExamOrder = async () => {
-  const query = gql`
-    query GetExamOrder {
-      examOrder(where: {id: "cm9fhma8u1xs207pme97r16aw"}) {
-        examJsonOrder
-      }
-    }
-  `;
+    const query = gql`
+        query GetExamOrder {
+            examOrder(where: {id: "cm9fhma8u1xs207pme97r16aw"}) {
+                examJsonOrder
+            }
+        }
+    `;
 
-  try {
-    const result = await request(MASTER_URL, query);
-    if (!result?.examOrder?.examJsonOrder) {
-      return { examOrders: [] };
+    try {
+        const result = await request(MASTER_URL, query);
+        if (!result?.examOrder?.examJsonOrder) {
+            return { examOrders: [] };
+        }
+
+        // Parse the JSON string and ensure it has the right structure
+        let examData;
+        try {
+            examData = typeof result.examOrder.examJsonOrder === 'string' 
+                ? JSON.parse(result.examOrder.examJsonOrder)
+                : result.examOrder.examJsonOrder;
+
+            // Ensure examOrders is an array with the required fields
+            const examOrders = examData.examOrders?.map(order => ({
+                examId: order.examId || '',
+                courseNickname: order.courseNickname || '',
+                order: order.order || 0,
+                title: order.title || ''
+            })) || [];
+
+            return { examOrders };
+        } catch (e) {
+            console.error('Error parsing exam orders:', e);
+            return { examOrders: [] };
+        }
+    } catch (error) {
+        console.error('Error fetching exam orders:', error);
+        return { examOrders: [] };
     }
-    return JSON.parse(result.examOrder.examJsonOrder);
-  } catch (error) {
-    console.error('Error fetching exam order:', error);
-    return { examOrders: [] };
-  }
 };
 
 const updateExamOrder = async (newData) => {
