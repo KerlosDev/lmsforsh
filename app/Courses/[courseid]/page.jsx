@@ -41,6 +41,9 @@ const CoursePage = () => {
     const [isEnrolled, setIsEnrolled] = useState(false);
     const [loading, setLoading] = useState(true);
     const [exams, setExams] = useState([]); // Add exams state
+    const [activeChapter, setActiveChapter] = useState(0);
+    const [activeLesson, setActiveLesson] = useState(0);
+    const [isReady, setIsReady] = useState(false); // Add isReady state
 
     const getallcoures = async () => {
         setLoading(true);
@@ -54,14 +57,27 @@ const CoursePage = () => {
 
             // Fetch chapters from JSON storage
             const chaptersData = await GlobalApi.getChaptersData();
-            const filteredChapters = chaptersData.chapters
+            const courseChapters = chaptersData.chapters
                 .filter(ch => ch.courseNickname === courseid)
                 .sort((a, b) => a.order - b.order)
                 .map(ch => ({
+                    id: ch.id,
                     nameofchapter: ch.title,
-                    linkOfVideo: ch.linkOfVideo,
-                    order: ch.order
+                    lessons: ch.lessons.map(lesson => ({
+                        id: lesson.id,
+                        name: lesson.title,
+                        link: lesson.link,
+                        order: lesson.order
+                    }))
                 }));
+
+            setcourseVideoChapters(courseChapters);
+
+            // Set initial lesson if available
+            if (courseChapters.length > 0 && courseChapters[0].lessons.length > 0) {
+                setActiveChapter(0);
+                setActiveLesson(0);
+            }
 
             // Fetch exams from JSON storage
             const examOrderData = await GlobalApi.getExamOrder();
@@ -79,7 +95,6 @@ const CoursePage = () => {
                 };
             }).filter(Boolean); // Remove any null values
 
-            setcourseVideoChapters(filteredChapters);
             setExams(examDetails);
         } catch (error) {
             console.error("Error fetching course:", error);
@@ -118,6 +133,11 @@ const CoursePage = () => {
         }
     }, [courseInfo]);
 
+    useEffect(() => {
+        // Set isReady after hydration
+        setIsReady(true);
+    }, []);
+
     const handlechapterClick = (index) => {
         setActiveIndex(index);
         setActiveIndex2(100);
@@ -126,6 +146,12 @@ const CoursePage = () => {
     const handlechapterClick2 = (index) => {
         setActiveIndex2(index);
         setActiveIndex(1000);
+    };
+
+    const handleLessonClick = (chapterIndex, lessonIndex) => {
+        setActiveChapter(chapterIndex);
+        setActiveLesson(lessonIndex);
+        setActiveIndex2(100); // Reset exam selection if needed
     };
 
     // Add this array for fixed positions
@@ -145,7 +171,10 @@ const CoursePage = () => {
     // Show locked content if no user or not enrolled
     const isContentLocked = !user || !isEnrolled;
 
-    if (loading) {
+    // Combine all loading states
+    const isPageLoading = loading || !isReady || !isLoaded;
+
+    if (isPageLoading) {
         return (
             <>
                 <Head>
@@ -215,10 +244,11 @@ const CoursePage = () => {
                         {/* Video Section */}
                         <div className="lg:col-span-2 space-y-6">
                             <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-900">
-                                {courseVideoChapters[activeIndex]?.linkOfVideo && !isContentLocked ? (
+                                {courseVideoChapters[activeChapter]?.lessons[activeLesson]?.link && !isContentLocked && isReady ? (
                                     <iframe
+                                        key={`${activeChapter}-${activeLesson}`} // Add key prop
                                         className="w-full h-full"
-                                        src={courseVideoChapters[activeIndex]?.linkOfVideo.replace("watch?v=", "embed/")}
+                                        src={courseVideoChapters[activeChapter].lessons[activeLesson].link.replace("watch?v=", "embed/")}
                                         allowFullScreen
                                     />
                                 ) : (
@@ -235,40 +265,75 @@ const CoursePage = () => {
                                 )}
                             </div>
 
-                            {/* Chapter Info */}
+                            {/* Chapter and Lesson Info */}
                             <div className="bg-gray-800/50 rounded-xl p-6">
-                                <h2 className="text-xl font-bold text-white mb-4">
-                                    {courseVideoChapters[activeIndex]?.nameofchapter}
+                                <h2 className="text-xl font-bold text-white mb-2">
+                                    {courseVideoChapters[activeChapter]?.nameofchapter}
                                 </h2>
-                                <p className="text-gray-400">
-                                    {courseVideoChapters[activeIndex]?.description}
-                                </p>
+                                <h3 className="text-lg text-gray-200 mb-4">
+                                    {courseVideoChapters[activeChapter]?.lessons[activeLesson]?.name}
+                                </h3>
                             </div>
                         </div>
 
                         {/* Chapters List */}
                         <div className="bg-gray-800/50 rounded-xl h-fit">
                             <div className="p-4 border-b border-gray-700">
-                                <h3 className="text-lg font-medium text-white">محتويات الكورس</h3>
+                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                    </svg>
+                                    محتويات الكورس
+                                </h3>
                             </div>
-                            <div className="divide-y divide-gray-700 max-h-[400px] overflow-y-auto">
-                                {courseVideoChapters.map((chapter, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => handlechapterClick(index)}
-                                        className={`w-full p-4 flex items-center gap-4 hover:bg-gray-700/50 transition
-                                        ${activeIndex === index ? 'bg-blue-500/20' : ''}`}
-                                        disabled={!isEnrolled}
-                                    >
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center
-                                        ${activeIndex === index ? 'bg-blue-500' : 'bg-gray-700'}`}>
-                                            {isEnrolled ? <FaPlay className="text-white" /> : <FaLock className="text-gray-400" />}
+                            <div className="divide-y divide-gray-700/50 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-700">
+                                {courseVideoChapters.map((chapter, chapterIndex) => (
+                                    <div key={chapter.id} className="p-4 hover:bg-gray-700/30 transition-colors">
+                                        <div className="mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                                    <span className="text-blue-400 font-medium">{chapterIndex + 1}</span>
+                                                </div>
+                                                <h4 className="text-white font-medium">{chapter.nameofchapter}</h4>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-white font-medium">{chapter.nameofchapter} 🧪</p>
-                                            <p className="text-sm text-gray-400">{chapter.duration || '50:00'} دقيقة</p>
+                                        <div className="space-y-2 pr-4">
+                                            {chapter.lessons.map((lesson, lessonIndex) => (
+                                                <button
+                                                    key={lesson.id}
+                                                    onClick={() => handleLessonClick(chapterIndex, lessonIndex)}
+                                                    className={`w-full p-3 flex items-center gap-3 rounded-lg transition-all duration-200 
+                                                        ${activeChapter === chapterIndex && activeLesson === lessonIndex
+                                                            ? 'bg-blue-500/20 shadow-lg shadow-blue-500/10'
+                                                            : 'hover:bg-gray-700/30'}`}
+                                                    disabled={!isEnrolled}
+                                                >
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors
+                                                        ${activeChapter === chapterIndex && activeLesson === lessonIndex
+                                                            ? 'bg-blue-500'
+                                                            : 'bg-gray-700'}`}
+                                                    >
+                                                        {isEnrolled ? (
+                                                            <FaPlay className={`${activeChapter === chapterIndex && activeLesson === lessonIndex
+                                                                ? 'text-white'
+                                                                : 'text-gray-400'
+                                                                } text-xs`} />
+                                                        ) : (
+                                                            <FaLock className="text-gray-400 text-xs" />
+                                                        )}
+                                                    </div>
+                                                    <div className="text-right flex-1">
+                                                        <p className={`text-sm transition-colors ${activeChapter === chapterIndex && activeLesson === lessonIndex
+                                                            ? 'text-blue-400 font-medium'
+                                                            : 'text-gray-300'
+                                                            }`}>
+                                                            {lesson.name}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            ))}
                                         </div>
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
 

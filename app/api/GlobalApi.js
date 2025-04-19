@@ -770,6 +770,20 @@ const getChaptersData = async () => {
     let parsedData;
     try {
       parsedData = JSON.parse(result.chpater.chapterData);
+      if (parsedData.chapters) {
+        parsedData.chapters = parsedData.chapters.map(chapter => ({
+          id: chapter.id || `chapter-${Date.now()}-${Math.random()}`,
+          title: chapter.title || '',
+          courseNickname: chapter.courseNickname || '',
+          order: chapter.order || 0,
+          lessons: Array.isArray(chapter.lessons) ? chapter.lessons.map(lesson => ({
+            id: lesson.id || `lesson-${Date.now()}-${Math.random()}`,
+            title: lesson.title || '',
+            link: lesson.link || '',
+            order: lesson.order || 0
+          })) : []
+        }));
+      }
     } catch (e) {
       console.error('Error parsing chapter data:', e);
       return { chapters: [] };
@@ -783,16 +797,32 @@ const getChaptersData = async () => {
 };
 
 const updateChaptersData = async (newData) => {
-  if (!newData || !newData.chapters) {
+  if (!newData || !Array.isArray(newData.chapters)) {
     console.error('Invalid chapter data format');
     return;
   }
+
+  // Ensure proper structure for each chapter
+  const sanitizedData = {
+    chapters: newData.chapters.map(chapter => ({
+      id: chapter.id || `chapter-${Date.now()}-${Math.random()}`,
+      title: chapter.nameofchapter || chapter.title || '', // Handle both nameofchapter and title
+      courseNickname: chapter.courseNickname || '',
+      order: chapter.order || 0,
+      lessons: (chapter.lessons || []).map(lesson => ({
+        id: lesson.id || `lesson-${Date.now()}-${Math.random()}`,
+        title: lesson.title || lesson.name || '', // Handle both title and name
+        link: lesson.link || '',
+        order: lesson.order || 0
+      }))
+    }))
+  };
 
   const mutation = gql`
     mutation UpdateChapters {
       updateChpater(
         where: { id: "cm9ffash61wgf07pmxchg9bl2" }
-        data: { chapterData: ${JSON.stringify(JSON.stringify(newData))} }
+        data: { chapterData: ${JSON.stringify(JSON.stringify(sanitizedData))} }
       ) {
         id
       }
@@ -844,18 +874,27 @@ const addChaptersForCourse = async (courseNickname, chapters) => {
 const updateCourseChapters = async (courseNickname, chapters) => {
   try {
     const existingData = await getChaptersData();
-
-    // Filter out chapters of the current course
     const otherChapters = existingData.chapters.filter(
       ch => ch.courseNickname !== courseNickname
     );
 
-    // Add updated chapters
-    const updatedChapters = chapters.map((chapter, index) => ({
-      title: chapter.nameofchapter,
-      linkOfVideo: chapter.linkOfVideo,
-      order: index + 1,
-      courseNickname
+    // Process updated chapters with proper structure
+    const updatedChapters = chapters.map((chapter, chapterIndex) => ({
+      id: chapter.id || `chapter-${Date.now()}-${chapterIndex}`,
+      title: chapter.nameofchapter || '', // Ensure chapter title is saved
+      courseNickname,
+      order: chapterIndex + 1,
+      lessons: (chapter.lessons || [{ // Provide default lesson if none exist
+        id: `lesson-${Date.now()}-0`,
+        title: '',
+        link: '',
+        order: 1
+      }]).map((lesson, lessonIndex) => ({
+        id: lesson.id || `lesson-${Date.now()}-${lessonIndex}`,
+        title: lesson.name || lesson.title || '',
+        link: lesson.link || '',
+        order: lessonIndex + 1
+      }))
     }));
 
     const updatedData = {

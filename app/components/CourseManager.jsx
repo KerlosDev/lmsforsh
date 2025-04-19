@@ -33,11 +33,29 @@ const CourseManager = () => {
         },
         classId: '', // Add this line
     });
-    const [chapters, setChapters] = useState([{ nameofchapter: '', linkOfVideo: '' }]);
+    const [chapters, setChapters] = useState([{
+        id: `chapter-${Date.now()}-0`,
+        nameofchapter: '',
+        lessons: [{
+            id: `lesson-${Date.now()}-0`,
+            name: '',
+            link: '',
+            order: 1
+        }]
+    }]);
     const [exams, setExams] = useState([]);
     const [selectedExam, setSelectedExam] = useState(null);
     const [showExamModal, setShowExamModal] = useState(false);
-    const [editingChapters, setEditingChapters] = useState([]);
+    const [editingChapters, setEditingChapters] = useState([{
+        id: `chapter-${Date.now()}-0`,
+        nameofchapter: '',
+        lessons: [{
+            id: `lesson-${Date.now()}-0`,
+            name: '',
+            link: '',
+            order: 1
+        }]
+    }]);
     const [editingExam, setEditingExam] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [courseChapters, setCourseChapters] = useState({});
@@ -136,113 +154,130 @@ const CourseManager = () => {
 
     const handleEdit = async (course) => {
         try {
-            console.log('Original course data:', course);
-            // Get chapters from JSON storage for this course
             const result = await GlobalApi.getChaptersData();
             const courseChapters = result.chapters
                 .filter(ch => ch.courseNickname === course.nicknameforcourse)
                 .sort((a, b) => a.order - b.order)
                 .map(ch => ({
+                    id: ch.id,
                     nameofchapter: ch.title,
-                    linkOfVideo: ch.linkOfVideo,
-                    order: ch.order
+                    lessons: Array.isArray(ch.lessons) ? ch.lessons.map(lesson => ({
+                        id: lesson.id || `lesson-${Date.now()}-${Math.random()}`,
+                        name: lesson.title || '',
+                        link: lesson.link || '',
+                        order: lesson.order || 0
+                    })) : [{ // Default lesson if no lessons exist
+                        id: `lesson-${Date.now()}-0`,
+                        name: '',
+                        link: '',
+                        order: 1
+                    }]
                 }));
 
-            const editData = {
-                ...course,
-                description: course.description || '',
-                exam: course.exam?.[0] || null,
-                isDraft: course.isDraft || false,
-                classId: course.classOfCourse || '' // Add this line to set the classId from classOfCourse
-            };
-
-            console.log('Setting editingCourse:', editData);
-            console.log('Setting editingChapters:', courseChapters);
-
-            // Get exam orders for this course
-            const examOrderData = await GlobalApi.getExamOrder();
-            const courseExams = examOrderData.examOrders
-                .filter(ex => ex.courseNickname === course.nicknameforcourse)
+            // Get course exams with proper order
+            const courseExamOrders = examOrder
+                .filter(eo => eo.courseNickname === course.nicknameforcourse)
                 .sort((a, b) => a.order - b.order);
 
-            // Get full exam details
-            const allExams = await GlobalApi.getAllExams();
-            const selectedExams = courseExams.map(orderExam => {
-                const fullExam = allExams.exams.find(e => e.id === orderExam.examId);
-                return {
-                    ...fullExam,
-                    order: orderExam.order
-                };
+            // Map exam orders to full exam objects with order
+            const orderedExams = courseExamOrders.map(eo => {
+                const exam = exams.find(e => e.id === eo.examId);
+                return exam ? { ...exam, order: eo.order } : null;
             }).filter(Boolean);
 
-            setEditingCourse(editData);
-            setEditingChapters(courseChapters.length > 0 ?
-                courseChapters :
-                [{ nameofchapter: '', linkOfVideo: '' }]
-            );
-            setSelectedExams(selectedExams); // Update selected exams with order
+            setSelectedExams(orderedExams);
+
+            setEditingCourse({
+                ...course,
+                description: course.description || '',
+                isDraft: course.isDraft || false,
+                classId: course.classOfCourse || ''
+            });
+
+            setEditingChapters(courseChapters.length > 0 ? courseChapters : [{
+                id: `chapter-${Date.now()}-0`,
+                nameofchapter: '',
+                lessons: [{ // Default lesson for new chapter
+                    id: `lesson-${Date.now()}-0`,
+                    name: '',
+                    link: '',
+                    order: 1
+                }]
+            }]);
         } catch (error) {
             console.error('Error in handleEdit:', error);
-            setEditingChapters([{ nameofchapter: '', linkOfVideo: '' }]);
+            // Initialize with default structure if error occurs
+            setEditingChapters([{
+                id: `chapter-${Date.now()}-0`,
+                nameofchapter: '',
+                lessons: [{
+                    id: `lesson-${Date.now()}-0`,
+                    name: '',
+                    link: '',
+                    order: 1
+                }]
+            }]);
             toast.error('Error loading course data');
         }
     };
 
+    const handleEditExamSelection = (examId) => {
+        const exam = exams.find(ex => ex.id === examId);
+        if (!exam) return;
+
+        setSelectedExams(prev => {
+            const isAlreadySelected = prev.some(e => e.id === exam.id);
+            if (isAlreadySelected) {
+                return prev.filter(e => e.id !== exam.id);
+            }
+            return [...prev, exam];
+        });
+    };
+
     const handleSave = async () => {
         try {
-            console.log('Current editingCourse state:', editingCourse);
-
             if (!editingCourse.nameofcourse || !editingCourse.nicknameforcourse) {
                 toast.error('Please fill in the course title and nickname');
                 return;
             }
 
-            const updatedCourse = {
-                nameofcourse: editingCourse.nameofcourse,
-                description: editingCourse.description || '',
-                price: Number(editingCourse.price) || 0,
-                isfree: Boolean(editingCourse.isfree),
-                isDraft: Boolean(editingCourse.isDraft), // Ensure isDraft is included
-                nicknameforcourse: editingCourse.nicknameforcourse,
-                chapters: editingChapters, // Include chapters in the update
-                exams: selectedExams,
-                classOfCourse: editingCourse.classId // Update this line
-            };
+            // Format chapters with lessons for saving
+            const formattedChapters = editingChapters
+                .filter(chapter => chapter.nameofchapter || chapter.lessons.some(l => l.name || l.link))
+                .map((chapter, chapterIndex) => ({
+                    id: chapter.id || `chapter-${Date.now()}-${chapterIndex}`,
+                    nameofchapter: chapter.nameofchapter, // Keep chapter name
+                    courseNickname: editingCourse.nicknameforcourse,
+                    order: chapterIndex + 1,
+                    lessons: chapter.lessons
+                        .filter(lesson => lesson.name || lesson.link)
+                        .map((lesson, lessonIndex) => ({
+                            id: lesson.id || `lesson-${Date.now()}-${lessonIndex}`,
+                            name: lesson.name || '', // Keep lesson name as name
+                            link: lesson.link || '',
+                            order: lessonIndex + 1
+                        }))
+                }));
 
-            console.log('Sending update with:', updatedCourse);
+            const updatedCourse = {
+                ...editingCourse,
+                chapters: formattedChapters,
+                exams: selectedExams // Add this line to include selected exams
+            };
 
             const result = await GlobalApi.updateCourse(editingCourse.id, updatedCourse);
 
-            // Then update the class association
-            if (editingCourse.classId) {
-                await GlobalApi.updateCourseClass(editingCourse.id, editingCourse.classId);
-            }
-
-            console.log('Update result:', result);
-
             if (result?.updateCourse?.id) {
-                // Update both chapters and exams
-                await Promise.all([
-                    GlobalApi.updateCourseChapters(editingCourse.nicknameforcourse, editingChapters),
-                    GlobalApi.updateCourseExams(editingCourse.nicknameforcourse, selectedExams)
-                ]);
-
-                toast.success('تم تحديث الكورس بنجاح');
+                await GlobalApi.updateCourseChapters(editingCourse.nicknameforcourse, formattedChapters);
+                toast.success('Course updated successfully');
                 setEditingCourse(null);
-                setEditingChapters([]); // Reset chapters
-                setSelectedExams([]); // Reset exams
-
-                // Show loading state while refreshing
-                setIsLoading(true);
-                await fetchCourses();
-                await fetchAllChapters(); // Refresh chapters data
-                await fetchExamOrders(); // Refresh exam orders
-            } else {
-                throw new Error('Failed to update course');
+                setSelectedExams([]); // Reset selected exams
+                fetchCourses();
+                fetchAllChapters();
             }
         } catch (error) {
             console.error('Update error:', error);
-            toast.error(error.message || 'فشل تحديث الكورس');
+            toast.error(error.message || 'Failed to update course');
         }
     };
 
@@ -261,7 +296,18 @@ const CourseManager = () => {
                 isDraft: newCourse.isDraft, // Add this line
                 dataofcourse: newCourse.dataofcourse || new Date().toISOString(),
                 nicknameforcourse: newCourse.nicknameforcourse,
-                chapters: chapters.filter(ch => ch.nameofchapter && ch.linkOfVideo), // Only include non-empty chapters
+                chapters: chapters.map((chapter, index) => ({
+                    id: chapter.id,
+                    nameofchapter: chapter.nameofchapter,
+                    courseNickname: newCourse.nicknameforcourse,
+                    order: index + 1,
+                    lessons: chapter.lessons.map((lesson, lessonIndex) => ({
+                        id: lesson.id,
+                        name: lesson.name,
+                        link: lesson.link,
+                        order: lessonIndex + 1
+                    }))
+                })),
                 selectedExam: selectedExam,
                 exams: selectedExams, // Update to use multiple exams
                 classOfCourse: newCourse.classId // Update this line
@@ -301,12 +347,80 @@ const CourseManager = () => {
             exam: { title: '', jsonexam: '' },
             classId: '', // Add this line
         });
-        setChapters([{ nameofchapter: '', linkOfVideo: '' }]);
+        setChapters([{
+            id: `chapter-${Date.now()}-0`,
+            nameofchapter: '',
+            lessons: [{
+                id: `lesson-${Date.now()}-0`,
+                name: '',
+                link: '',
+                order: 1
+            }]
+        }]);
         setSelectedExam(null);
     };
 
     const addChapter = () => {
-        setChapters([...chapters, { nameofchapter: '', linkOfVideo: '' }]);
+        // Create new chapter with proper structure
+        const newChapter = {
+            id: `chapter-${Date.now()}-${editingChapters.length}`,
+            nameofchapter: '',
+            lessons: [{  // Always initialize with one empty lesson
+                id: `lesson-${Date.now()}-0`,
+                name: '',
+                link: '',
+                order: 1
+            }]
+        };
+
+        setEditingChapters(prevChapters => [...prevChapters, newChapter]);
+    };
+
+    // Add the addLesson function
+    const addLesson = (chapterIndex) => {
+        const newChapters = [...editingChapters];
+        if (!newChapters[chapterIndex].lessons) {
+            newChapters[chapterIndex].lessons = [];
+        }
+
+        newChapters[chapterIndex].lessons.push({
+            id: `lesson-${Date.now()}-${newChapters[chapterIndex].lessons.length}`,
+            name: '',
+            link: '',
+            order: newChapters[chapterIndex].lessons.length + 1
+        });
+
+        setEditingChapters(newChapters);
+    };
+
+    const addNewChapter = () => {
+        const newChapter = {
+            id: `chapter-${Date.now()}-${chapters.length}`,
+            nameofchapter: '',
+            lessons: [{
+                id: `lesson-${Date.now()}-0`,
+                name: '',
+                link: '',
+                order: 1
+            }]
+        };
+        setChapters(prev => [...prev, newChapter]);
+    };
+
+    const addNewLesson = (chapterIndex) => {
+        const newChapters = [...chapters];
+        if (!newChapters[chapterIndex].lessons) {
+            newChapters[chapterIndex].lessons = [];
+        }
+
+        newChapters[chapterIndex].lessons.push({
+            id: `lesson-${Date.now()}-${newChapters[chapterIndex].lessons.length}`,
+            name: '',
+            link: '',
+            order: newChapters[chapterIndex].lessons.length + 1
+        });
+
+        setChapters(newChapters);
     };
 
     const removeChapter = (index) => {
@@ -489,10 +603,10 @@ const CourseManager = () => {
 
                 {/* Form Content - Reduce padding */}
                 <div className="p-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-8 gap-4">
 
                         {/* Rest of the form structure remains the same */}
-                        <div className="lg:col-span-4 space-y-4">
+                        <div className="lg:col-span-3 space-y-4">
                             <h4 className="text-lg font-arabicUI3 text-white/90 flex items-center gap-2 mb-6">
                                 <FaBook className="text-blue-400" />
                                 المعلومات الأساسية
@@ -618,67 +732,87 @@ const CourseManager = () => {
                         </div>
 
                         {/* Chapters Column */}
-                        <div className="lg:col-span-4 lg:border-x border-white/10 lg:px-6">
+                        <div className="lg:col-span-5 p-4 lg:border-x border-white/10 lg:px-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="text-lg font-arabicUI3 text-white">الفصول</h4>
                                 <button
-                                    onClick={() => setEditingChapters([...editingChapters, { nameofchapter: '', linkOfVideo: '' }])}
+                                    onClick={addChapter}  // Change from the old handler
                                     className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30"
                                 >
                                     <FaPlus />
                                 </button>
                             </div>
                             <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                                {editingChapters.map((chapter, index) => (
-                                    <div key={index} className="relative bg-white/5 p-4 rounded-lg">
-                                        <div className="flex gap-2 mb-2">
-                                            <button
-                                                onClick={() => moveChapter(index, 'up')}
-                                                disabled={index === 0}
-                                                className={`p-1 rounded ${index === 0 ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-500/20'}`}
-                                            >
-                                                <FaArrowUp size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => moveChapter(index, 'down')}
-                                                disabled={index === editingChapters.length - 1}
-                                                className={`p-1 rounded ${index === editingChapters.length - 1 ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-500/20'}`}
-                                            >
-                                                <FaArrowDown size={14} />
-                                            </button>
-                                            <span className="text-gray-400 text-sm">Chapter {index + 1}</span>
-                                        </div>
+                                {editingChapters.map((chapter, chapterIndex) => (
+                                    <div key={chapterIndex} className="relative bg-white/5 p-4 rounded-lg mb-4">
                                         <input
                                             type="text"
                                             value={chapter.nameofchapter}
                                             onChange={(e) => {
                                                 const newChapters = [...editingChapters];
-                                                newChapters[index].nameofchapter = e.target.value;
+                                                newChapters[chapterIndex].nameofchapter = e.target.value;
                                                 setEditingChapters(newChapters);
                                             }}
                                             className="w-full p-2 bg-white/5 border border-white/10 rounded mb-2 text-white"
                                             placeholder="اسم الفصل"
                                         />
-                                        <input
-                                            type="text"
-                                            value={chapter.linkOfVideo}
-                                            onChange={(e) => {
-                                                const newChapters = [...editingChapters];
-                                                newChapters[index].linkOfVideo = e.target.value;
-                                                setEditingChapters(newChapters);
-                                            }}
-                                            className="w-full p-2 bg-white/5 border border-white/10 rounded text-white"
-                                            placeholder="رابط الفيديو"
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                const newChapters = editingChapters.filter((_, i) => i !== index);
-                                                setEditingChapters(newChapters);
-                                            }}
-                                            className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
-                                        >
-                                            <FaTrash size={12} />
-                                        </button>
+
+                                        <div className="space-y-2 mt-2">
+                                            {chapter.lessons.map((lesson, lessonIndex) => (
+                                                <div key={lessonIndex} className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={lesson.name}
+                                                        onChange={(e) => {
+                                                            const newChapters = [...editingChapters];
+                                                            newChapters[chapterIndex].lessons[lessonIndex].name = e.target.value;
+                                                            setEditingChapters(newChapters);
+                                                        }}
+                                                        className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-white"
+                                                        placeholder="اسم الدرس"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={lesson.link}
+                                                        onChange={(e) => {
+                                                            const newChapters = [...editingChapters];
+                                                            newChapters[chapterIndex].lessons[lessonIndex].link = e.target.value;
+                                                            setEditingChapters(newChapters);
+                                                        }}
+                                                        className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-white"
+                                                        placeholder="رابط الفيديو"
+                                                    />
+                                                    <button
+                                                        onClick={() => {
+                                                            const newChapters = [...editingChapters];
+                                                            newChapters[chapterIndex].lessons = chapter.lessons.filter((_, i) => i !== lessonIndex);
+                                                            setEditingChapters(newChapters);
+                                                        }}
+                                                        className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
+                                                    >
+                                                        <FaTrash size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex justify-between mt-2">
+                                            <button
+                                                onClick={() => addLesson(chapterIndex)}
+                                                className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30"
+                                            >
+                                                <FaPlus size={12} /> إضافة درس
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const newChapters = editingChapters.filter((_, i) => i !== chapterIndex);
+                                                    setEditingChapters(newChapters);
+                                                }}
+                                                className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
+                                            >
+                                                <FaTrash size={12} /> حذف الفصل
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -720,7 +854,7 @@ const CourseManager = () => {
                                     </div>
                                 ))}
                                 <div className="mt-4">
-                                    <h5 className="text-white mb-2">Available Exams</h5>
+
                                     {exams
                                         .filter(exam => !selectedExams.some(selected => selected.id === exam.id))
                                         .map(exam => (
@@ -736,6 +870,9 @@ const CourseManager = () => {
                             </div>
                         </div>
                     </div>
+
+
+
                 </div>
 
                 {/* Footer - Make it more compact */}
@@ -1074,6 +1211,96 @@ const CourseManager = () => {
                 </div>
             </div>
         </div>
+    );
+
+    const renderAddCourseForm = () => (
+        // ...existing form wrapper...
+        <div className="lg:col-span-4 lg:border-x border-white/10 lg:px-6">
+            <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-arabicUI3 text-white">الفصول</h4>
+                <button
+                    onClick={addNewChapter}
+                    className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30"
+                >
+                    <FaPlus />
+                </button>
+            </div>
+            <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                {chapters.map((chapter, chapterIndex) => (
+                    <div key={chapter.id} className="relative bg-white/5 p-4 rounded-lg mb-4">
+                        <input
+                            type="text"
+                            value={chapter.nameofchapter}
+                            onChange={(e) => {
+                                const newChapters = [...chapters];
+                                newChapters[chapterIndex].nameofchapter = e.target.value;
+                                setChapters(newChapters);
+                            }}
+                            className="w-full p-2 bg-white/5 border border-white/10 rounded mb-2 text-white"
+                            placeholder="اسم الفصل"
+                        />
+
+                        <div className="space-y-2 mt-2">
+                            {chapter.lessons.map((lesson, lessonIndex) => (
+                                <div key={lesson.id} className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={lesson.name}
+                                        onChange={(e) => {
+                                            const newChapters = [...chapters];
+                                            newChapters[chapterIndex].lessons[lessonIndex].name = e.target.value;
+                                            setChapters(newChapters);
+                                        }}
+                                        className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-white"
+                                        placeholder="اسم الدرس"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={lesson.link}
+                                        onChange={(e) => {
+                                            const newChapters = [...chapters];
+                                            newChapters[chapterIndex].lessons[lessonIndex].link = e.target.value;
+                                            setChapters(newChapters);
+                                        }}
+                                        className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-white"
+                                        placeholder="رابط الفيديو"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const newChapters = [...chapters];
+                                            newChapters[chapterIndex].lessons = chapter.lessons.filter((_, i) => i !== lessonIndex);
+                                            setChapters(newChapters);
+                                        }}
+                                        className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
+                                    >
+                                        <FaTrash size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-between mt-2">
+                            <button
+                                onClick={() => addNewLesson(chapterIndex)}
+                                className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30"
+                            >
+                                <FaPlus size={12} /> إضافة درس
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const newChapters = chapters.filter((_, i) => i !== chapterIndex);
+                                    setChapters(newChapters);
+                                }}
+                                className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
+                            >
+                                <FaTrash size={12} /> حذف الفصل
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+        // ...rest of form...
     );
 
     return (
@@ -1431,38 +1658,83 @@ const CourseManager = () => {
                                     <div className="flex justify-between items-center mb-4">
                                         <h4 className="text-lg font-arabicUI3 text-white">الفصول</h4>
                                         <button
-                                            onClick={addChapter}
+                                            onClick={addNewChapter}
                                             className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30"
                                         >
                                             <FaPlus /> إضافة فصل
                                         </button>
                                     </div>
                                     <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                                        {chapters.map((chapter, index) => (
-                                            <div key={index} className="relative bg-white/5 p-4 rounded-lg">
+                                        {chapters.map((chapter, chapterIndex) => (
+                                            <div key={chapter.id} className="relative bg-white/5 p-4 rounded-lg mb-4">
                                                 <input
                                                     type="text"
-                                                    placeholder="اسم الفصل"
                                                     value={chapter.nameofchapter}
-                                                    onChange={(e) => updateChapter(index, 'nameofchapter', e.target.value)}
+                                                    onChange={(e) => {
+                                                        const newChapters = [...chapters];
+                                                        newChapters[chapterIndex].nameofchapter = e.target.value;
+                                                        setChapters(newChapters);
+                                                    }}
                                                     className="w-full p-2 bg-white/5 border border-white/10 rounded mb-2 text-white"
+                                                    placeholder="اسم الفصل"
                                                 />
-                                                <input
-                                                    type="text"
-                                                    placeholder="رابط الفيديو"
-                                                    value={chapter.linkOfVideo}
-                                                    onChange={(e) => updateChapter(index, 'linkOfVideo', e.target.value)}
-                                                    className="w-full p-2 bg-white/5 border border-white/10 rounded text-white"
-                                                />
-                                                {chapters.length > 1 && (
+
+                                                <div className="space-y-2 mt-2">
+                                                    {chapter.lessons.map((lesson, lessonIndex) => (
+                                                        <div key={lesson.id} className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={lesson.name}
+                                                                onChange={(e) => {
+                                                                    const newChapters = [...chapters];
+                                                                    newChapters[chapterIndex].lessons[lessonIndex].name = e.target.value;
+                                                                    setChapters(newChapters);
+                                                                }}
+                                                                className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-white"
+                                                                placeholder="اسم الدرس"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={lesson.link}
+                                                                onChange={(e) => {
+                                                                    const newChapters = [...chapters];
+                                                                    newChapters[chapterIndex].lessons[lessonIndex].link = e.target.value;
+                                                                    setChapters(newChapters);
+                                                                }}
+                                                                className="flex-1 p-2 bg-white/5 border border-white/10 rounded text-white"
+                                                                placeholder="رابط الفيديو"
+                                                            />
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newChapters = [...chapters];
+                                                                    newChapters[chapterIndex].lessons = chapter.lessons.filter((_, i) => i !== lessonIndex);
+                                                                    setChapters(newChapters);
+                                                                }}
+                                                                className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
+                                                            >
+                                                                <FaTrash size={12} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex justify-between mt-2">
                                                     <button
-                                                        onClick={() => removeChapter(index)}
-                                                        className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 
-                                                        rounded hover:bg-red-500/30"
+                                                        onClick={() => addNewLesson(chapterIndex)}
+                                                        className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30"
                                                     >
-                                                        <FaTrash size={12} />
+                                                        <FaPlus size={12} /> إضافة درس
                                                     </button>
-                                                )}
+                                                    <button
+                                                        onClick={() => {
+                                                            const newChapters = chapters.filter((_, i) => i !== chapterIndex);
+                                                            setChapters(newChapters);
+                                                        }}
+                                                        className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"
+                                                    >
+                                                        <FaTrash size={12} /> حذف الفصل
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
