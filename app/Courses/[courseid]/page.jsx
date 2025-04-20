@@ -148,10 +148,29 @@ const CoursePage = () => {
         setActiveIndex(1000);
     };
 
-    const handleLessonClick = (chapterIndex, lessonIndex) => {
+    const handleLessonClick = async (chapterIndex, lessonIndex) => {
         setActiveChapter(chapterIndex);
         setActiveLesson(lessonIndex);
         setActiveIndex2(100); // Reset exam selection if needed
+
+        // Only track if user is enrolled and authenticated
+        if (isEnrolled && user?.primaryEmailAddress?.emailAddress) {
+            try {
+                const historyData = {
+                    userEmail: user.primaryEmailAddress.emailAddress,
+                    courseId: courseid,
+                    chapterTitle: courseVideoChapters[chapterIndex].nameofchapter,
+                    lessonTitle: courseVideoChapters[chapterIndex].lessons[lessonIndex].name,
+                    lessonId: courseVideoChapters[chapterIndex].lessons[lessonIndex].id,
+                    type: 'lesson_view'
+                };
+
+                await GlobalApi.saveStudentHistory(historyData);
+            } catch (error) {
+                console.error('Error tracking lesson history:', error);
+                // Continue even if tracking fails
+            }
+        }
     };
 
     // Add this array for fixed positions

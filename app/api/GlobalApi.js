@@ -1356,6 +1356,93 @@ const updateCourseClass = async (courseId, classId) => {
   return await request(MASTER_URL, mutation);
 };
 
+
+const getStudentHistory = async () => {
+  const query = gql`
+    query GetStudentHistory {
+      historyOfStudent(where: {id: "cm9pokhh22uni07ob8f96d1b9"}) {
+        id
+        historyy
+      }
+    }
+  `;
+
+  const result = await request(MASTER_URL, query);
+  return result;
+};
+
+const saveStudentHistory = async (historyData) => {
+  try {
+    // Get existing history data
+    const existingData = await getStudentHistory();
+    let history = [];
+
+    try {
+      history = JSON.parse(existingData.historyOfStudent?.historyy || '[]');
+    } catch (e) {
+      history = [];
+    }
+
+    // Add new history entry
+    history.push({
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      ...historyData
+    });
+
+    const mutation = gql`
+      mutation UpdateStudentHistory {
+        updateHistoryOfStudent(
+          where: { id: "cm9pokhh22uni07ob8f96d1b9" }
+          data: { historyy: ${JSON.stringify(JSON.stringify(history))} }
+        ) {
+          id
+        }
+        publishHistoryOfStudent(where: { id: "cm9pokhh22uni07ob8f96d1b9" }) {
+          id
+        }
+      }
+    `;
+
+    return await request(MASTER_URL, mutation);
+  } catch (error) {
+    console.error('Error saving student history:', error);
+    throw error;
+  }
+};
+ 
+const getWhatsAppData = async () => {
+  const query = gql`
+    query GetWhatsAppData {
+      whatsappdata(where: {id: "cm9psso2z2wyd08o9lmwg3xev"}) {
+        id
+        whatsappnumber
+      }
+    }
+  `;
+
+  const result = await request(MASTER_URL, query);
+  return result;
+};
+
+const saveWhatsAppData = async (whatsappData) => {
+  const mutation = gql`
+    mutation UpdateWhatsAppData {
+      updateWhatsappdata(
+        where: { id: "cm9psso2z2wyd08o9lmwg3xev" }
+        data: { whatsappnumber: ${JSON.stringify(JSON.stringify(whatsappData))} }
+      ) {
+        id
+      }
+      publishWhatsappdata(where: { id: "cm9psso2z2wyd08o9lmwg3xev" }) {
+        id
+      }
+    }
+  `;
+
+  return await request(MASTER_URL, mutation);
+};
+
 export default {
   getOffer,
   addQuiz,
@@ -1409,4 +1496,8 @@ export default {
   updateClassCourses,
   createClassCourse, // Add this line
   updateCourseClass,
+  getStudentHistory,
+  saveStudentHistory, 
+  getWhatsAppData,
+  saveWhatsAppData,
 }

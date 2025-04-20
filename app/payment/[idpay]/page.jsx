@@ -16,6 +16,11 @@ const Page = ({ params }) => {
     const [loading, setLoading] = useState(false); // State for loading status
     const [showmodel, setshowmodel] = useState(false)
     const [error, setError] = useState(null);
+    const [studentPhone, setStudentPhone] = useState('');
+    const [parentPhone, setParentPhone] = useState('');
+    const [hasSubmittedPhones, setHasSubmittedPhones] = useState(false);
+    const [showPhoneForm, setShowPhoneForm] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
     const handlenumber = (e) => {
         setNumber(e.target.value);
     };
@@ -51,6 +56,65 @@ const Page = ({ params }) => {
         }
     }, [user]);
 
+    useEffect(() => {
+        const checkExistingPhones = async () => {
+            if (!user?.primaryEmailAddress?.emailAddress) return;
+
+            try {
+                const result = await GlobalApi.getWhatsAppData();
+                // Parse the single JSON object string
+                const whatsappData = result.whatsappdata?.whatsappnumber
+                    ? JSON.parse(result.whatsappdata.whatsappnumber)
+                    : null;
+
+                if (whatsappData &&
+                    whatsappData.userEmail === user.primaryEmailAddress.emailAddress &&
+                    whatsappData.studentWhatsApp &&
+                    whatsappData.parentWhatsApp) {
+                    // Found existing data for this user
+                    setHasSubmittedPhones(true);
+                    setShowPhoneForm(false);
+                    setStudentPhone(whatsappData.studentWhatsApp);
+                    setParentPhone(whatsappData.parentWhatsApp);
+                } else {
+                    setShowPhoneForm(true);
+                    setHasSubmittedPhones(false);
+                }
+            } catch (error) {
+                console.error('Error checking WhatsApp numbers:', error);
+                setShowPhoneForm(true);
+                setHasSubmittedPhones(false);
+            }
+        };
+
+        checkExistingPhones();
+    }, [user]);
+
+    const handlePhoneSubmit = async () => {
+        if (!studentPhone || !parentPhone || studentPhone.length < 11 || parentPhone.length < 11) {
+            toast.error('الرجاء إدخال أرقام واتساب صحيحة');
+            return;
+        }
+
+        try {
+            // Create new WhatsApp data object
+            const whatsappData = {
+                userEmail: user.primaryEmailAddress.emailAddress,
+                studentWhatsApp: studentPhone,
+                parentWhatsApp: parentPhone,
+                timestamp: new Date().toISOString()
+            };
+
+            await GlobalApi.saveWhatsAppData(whatsappData);
+            setHasSubmittedPhones(true);
+            setShowPhoneForm(false);
+            toast.success('تم حفظ أرقام الواتساب بنجاح');
+        } catch (error) {
+            console.error('Error saving WhatsApp numbers:', error);
+            toast.error('حدث خطأ أثناء حفظ أرقام الواتساب');
+        }
+    };
+
     const handleclicknum = async () => {
         if (!user) return;
 
@@ -66,7 +130,10 @@ const Page = ({ params }) => {
                 }
             } else {
                 // Handle paid course enrollment
-                if (number.length < 10) return;
+                if (number.length < 10) {
+                    toast.error("رقم الموبايل غير صحيح");
+                    return;
+                }
 
                 const uniqueEnrollId = `enr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 await GlobalApi.saveNewActivation({
@@ -79,6 +146,9 @@ const Page = ({ params }) => {
                     courseId: courseInfo?.nicknameforcourse,
                     price: courseInfo?.price
                 });
+
+                toast.success("تم إرسال طلبك بنجاح! سيتم التفعيل خلال 24 ساعة");
+                setSubmitted(true);
                 setshowmodel(true);
             }
         } catch (error) {
@@ -125,6 +195,117 @@ const Page = ({ params }) => {
             </div>
         );
     }
+
+    const renderPaymentContent = () => {
+        if (showmodel && submitted) {
+            return (
+                <div className="text-center space-y-6 py-8">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full mx-auto flex items-center justify-center">
+                        <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <div className="space-y-2">
+                        <h3 className="text-xl font-medium text-green-400">تم استلام طلبك بنجاح</h3>
+                        <p className="text-blue-400">سيتم تفعيل الكورس خلال 24 ساعة</p>
+                    </div>
+                    <Link href="/">
+                        <button className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all duration-300">
+                            العودة للصفحة الرئيسية
+                        </button>
+                    </Link>
+                </div>
+            );
+        }
+
+        // Only show phone form if needed and not already submitted
+        if (showPhoneForm && !hasSubmittedPhones) {
+            return (
+                <div dir='rtl' className="space-y-4">
+                    <h3 className="text-lg font-medium text-center">أدخل أرقام الواتساب</h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm text-blue-400">رقم واتساب الطالب</label>
+                            <input
+                                type="tel"
+                                value={studentPhone}
+                                onChange={(e) => setStudentPhone(e.target.value)}
+                                placeholder="01XXXXXXXXX"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-blue-400">رقم واتساب ولي الأمر</label>
+                            <input
+                                type="tel"
+                                value={parentPhone}
+                                onChange={(e) => setParentPhone(e.target.value)}
+                                placeholder="01XXXXXXXXX"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center"
+                            />
+                        </div>
+                        <button
+                            onClick={handlePhoneSubmit}
+                            className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl py-3"
+                        >
+                            حفظ أرقام الواتساب
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Show payment form if phone numbers are already submitted
+        return (
+            <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4">
+                    <h3 className="text-lg sm:text-xl font-medium text-center">طريقة الدفع</h3>
+                    <div className="bg-gradient-to-r from-[#FF5A5F] to-[#FF8C8F] p-4 sm:p-6 rounded-xl text-center space-y-3">
+                        {/*                                                     <img src="/vod.png" alt="Vodafone Cash" className="h-16 mx-auto" />
+ */}                                                    <div className="space-y-2">
+                            <p className="text-lg sm:text-xl">حول على رقم فودافون كاش</p>
+                            <p className="text-2xl sm:text-4xl font-bold tracking-wider">01004365906</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <label className="block text-sm text-blue-400">أدخل رقم الموبايل الذي حولت منه</label>
+                    <input
+                        type="number"
+                        value={number}
+                        placeholder="01XXXXXXXXX"
+                        onChange={handlenumber}
+                        onKeyDown={handleKeyPress}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3
+                             text-center focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+
+                    <button
+                        disabled={number.length < 10 || loading}
+                        onClick={handleclicknum}
+                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 
+                             hover:from-blue-600 hover:to-indigo-600 
+                             disabled:from-gray-600 disabled:to-gray-700
+                             text-white rounded-xl py-4 transition-all duration-300
+                             flex items-center justify-center gap-2"
+                    >
+                        {loading ? (
+                            <div className="flex items-center gap-2">
+                                <span className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                <span>جاري التحقق...</span>
+                            </div>
+                        ) : (
+                            <>
+                                <span>تأكيد عملية الدفع</span>
+                                <HiHeart className="text-xl" />
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="min-h-screen bg-[#0A1121] text-white font-arabicUI3">
@@ -210,72 +391,7 @@ const Page = ({ params }) => {
                             {/* Payment Form Section */}
                             <div className="md:col-span-3">
                                 <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-white/10">
-                                    {!showmodel ? (
-                                        <div className="space-y-4 sm:space-y-6">
-                                            <div className="space-y-4">
-                                                <h3 className="text-lg sm:text-xl font-medium text-center">طريقة الدفع</h3>
-                                                <div className="bg-gradient-to-r from-[#FF5A5F] to-[#FF8C8F] p-4 sm:p-6 rounded-xl text-center space-y-3">
-                                                    {/*                                                     <img src="/vod.png" alt="Vodafone Cash" className="h-16 mx-auto" />
- */}                                                    <div className="space-y-2">
-                                                        <p className="text-lg sm:text-xl">حول على رقم فودافون كاش</p>
-                                                        <p className="text-2xl sm:text-4xl font-bold tracking-wider">01004365906</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <label className="block text-sm text-blue-400">أدخل رقم الموبايل الذي حولت منه</label>
-                                                <input
-                                                    type="number"
-                                                    value={number}
-                                                    placeholder="01XXXXXXXXX"
-                                                    onChange={handlenumber}
-                                                    onKeyDown={handleKeyPress}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3
-                                                         text-center focus:outline-none focus:border-blue-500 transition-colors"
-                                                />
-
-                                                <button
-                                                    disabled={number.length < 10 || loading}
-                                                    onClick={handleclicknum}
-                                                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 
-                                                         hover:from-blue-600 hover:to-indigo-600 
-                                                         disabled:from-gray-600 disabled:to-gray-700
-                                                         text-white rounded-xl py-4 transition-all duration-300
-                                                         flex items-center justify-center gap-2"
-                                                >
-                                                    {loading ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                                                            <span>جاري التحقق...</span>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <span>تأكيد عملية الدفع</span>
-                                                            <HiHeart className="text-xl" />
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-center space-y-6 py-8">
-                                            <div className="w-16 h-16 bg-green-500/20 rounded-full mx-auto flex items-center justify-center">
-                                                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <h3 className="text-xl font-medium text-green-400">تم استلام طلبك بنجاح</h3>
-                                                <p className="text-blue-400">سيتم تفعيل الكورس خلال 24 ساعة</p>
-                                            </div>
-                                            <Link href="/">
-                                                <button className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all duration-300">
-                                                    العودة للصفحة الرئيسية
-                                                </button>
-                                            </Link>
-                                        </div>
-                                    )}
+                                    {renderPaymentContent()}
                                 </div>
                             </div>
                         </div>

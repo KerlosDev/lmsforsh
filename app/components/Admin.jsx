@@ -20,6 +20,7 @@ import BookOrders from './BookOrders';
 import { IoBookSharp } from "react-icons/io5";
 import BooksManager from './BooksManager';
 import AdminBooks from './AdminBooks';
+import LessonAnalytics from './LessonAnalytics';
 
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
@@ -90,7 +91,7 @@ const Admin = () => {
 
     const emailsPerPage = 5; // Emails to show per page
 
-   
+
 
     const publishEnrolls = () => {
         GlobalApi.publishEnrolls().then(req => {
@@ -248,14 +249,14 @@ const Admin = () => {
         }
     };
 
-    
+
 
     const handleIdOfEnroll = async (idOfEnroll, state) => {
         if (loadingAction) return; // Prevent multiple simultaneous actions
         setLoadingAction(true);
         setOfEnroll(idOfEnroll);
         setActiveOrNot(state);
-        try { 
+        try {
             await dataAdmin(); // Refresh data after successful action
 
             // Update isHePaid for the user's email
@@ -311,7 +312,7 @@ const Admin = () => {
             try {
                 await GlobalApi.sendEnroll4Admin(selectedCourse, manualEmail, formattedData);
                 // Automatically set the enrollment as active
- 
+
                 await dataAdmin();
                 setShowCourseDialog(false);
                 setSelectedCourse('');
@@ -473,7 +474,7 @@ const Admin = () => {
                                     <FaBell className="ml-2" />
                                     <span className="font-arabicUI3">الإشعارات</span>
                                 </button>
- 
+
 
                                 <button
                                     onClick={() => setActiveSection('booksManage')}
@@ -484,7 +485,15 @@ const Admin = () => {
                                     <span className="font-arabicUI3">إدارة الكتب</span>
                                 </button>
 
-                               
+                                <button
+                                    onClick={() => setActiveSection('lessonAnalytics')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                    ${activeSection === 'lessonAnalytics' ? 'bg-blue-500 text-white' : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <FaChartPie className="ml-2" />
+                                    <span className="font-arabicUI3">تحليلات الدروس</span>
+                                </button>
+
                             </nav>
                         </div>
 
@@ -547,6 +556,8 @@ const Admin = () => {
                                 <AdminBooks />
                             ) : activeSection === 'bookOrders' ? (
                                 <BookOrders />
+                            ) : activeSection === 'lessonAnalytics' ? (
+                                <LessonAnalytics />
                             ) : null}
                         </div>
                     </div>
