@@ -44,9 +44,17 @@ const LessonAnalytics = () => {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'details'
     const [quizResults, setQuizResults] = useState([]);
     const reportRef = useRef(null);
+    const [allCourses, setAllCourses] = useState([]);
+    const [allChapters, setAllChapters] = useState([]);
+    const [allExams, setAllExams] = useState([]);
+    const [studentProgress, setStudentProgress] = useState(null);
+    const [expandedCourses, setExpandedCourses] = useState({});
+    const [lessonFilter, setLessonFilter] = useState({}); // 'watched', 'unwatched', or null
+
     useEffect(() => {
         fetchLessonData();
         fetchWhatsappNumbers();
+        fetchAllCoursesAndChapters();
     }, []);
 
     const fetchLessonData = async () => {
@@ -76,6 +84,21 @@ const LessonAnalytics = () => {
             }
         } catch (error) {
             console.error('Error fetching WhatsApp numbers:', error);
+        }
+    };
+
+    const fetchAllCoursesAndChapters = async () => {
+        try {
+            const [coursesResult, chaptersResult, examsResult] = await Promise.all([
+                GlobalApi.getAllCourseList(),
+                GlobalApi.getChaptersData(),
+                GlobalApi.getAllExams()
+            ]);
+            setAllCourses(coursesResult.courses || []);
+            setAllChapters(chaptersResult.chapters || []);
+            setAllExams(examsResult.exams || []);
+        } catch (error) {
+            console.error('Error fetching course data:', error);
         }
     };
 
@@ -228,10 +251,72 @@ const LessonAnalytics = () => {
         }
     };
 
+    const getWatchedLessonsByCourse = (student, course, chapters) => {
+        const courseChapters = chapters.filter(ch => ch.courseNickname === course.nicknameforcourse);
+        const watchedLessons = student.lessons.filter(lesson => {
+            const [chapterTitle] = lesson.split(' - ');
+            return courseChapters.some(ch => ch.title === chapterTitle);
+        });
+        return watchedLessons;
+    };
+
+    const calculateStudentProgress = (student) => {
+        const progress = allCourses.map(course => {
+            const courseChapters = allChapters.filter(ch =>
+                ch.courseNickname === course.nicknameforcourse
+            );
+
+            const courseLessons = courseChapters.flatMap(ch => ch.lessons || []);
+            const totalLessons = courseLessons.length;
+
+            const watchedLessons = getWatchedLessonsByCourse(student, course, allChapters);
+
+            // Get exams for this course
+            const courseExams = allExams.filter(exam =>
+                exam.courseId === course.id || exam.courseName === course.nameofcourse
+            );
+
+            // Calculate completed exams
+            const completedExams = quizResults.filter(quiz =>
+                courseExams.some(exam => exam.title === quiz.nameofquiz)
+            );
+
+            // Find unwatched lessons
+            const unwatchedLessons = courseChapters.flatMap(chapter => {
+                return (chapter.lessons || [])
+                    .filter(lesson => {
+                        const fullLessonName = `${chapter.title} - ${lesson.title}`;
+                        return !student.lessons.includes(fullLessonName);
+                    })
+                    .map(lesson => ({
+                        chapterTitle: chapter.title,
+                        lessonTitle: lesson.title
+                    }));
+            });
+
+            return {
+                courseId: course.id,
+                courseName: course.nameofcourse,
+                courseNickname: course.nicknameforcourse,
+                totalLessons,
+                watchedLessons: watchedLessons,
+                watchedLessonsCount: watchedLessons.length,
+                completion: totalLessons > 0 ? (watchedLessons.length / totalLessons) * 100 : 0,
+                examsTotal: courseExams.length,
+                examsCompleted: completedExams.length,
+                unwatchedLessons,
+                courseChapters // Add this
+            };
+        }).filter(course => course.totalLessons > 0); // Only show courses with lessons
+
+        setStudentProgress(progress);
+    };
+
     const handleStudentSelect = (student) => {
         setSelectedStudent(student);
         setActiveTab('details');
         fetchQuizResults(student.email);
+        calculateStudentProgress(student);
     };
 
     const chartOptions = {
@@ -288,7 +373,31 @@ const LessonAnalytics = () => {
     return (
         <div ref={reportRef} className="p-6 space-y-6">
             {/* Tabs Navigation */}
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-between gap-4 mb-6">
+                <div>
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`px-6 py-3 rounded-xl font-arabicUI3 transition-colors ${activeTab === 'overview'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                            }`}
+                    >
+                        نظرة عامة
+                    </button>
+
+                    {selectedStudent && (
+                        <button
+                            onClick={() => setActiveTab('details')}
+                            className={`px-6 py-3 rounded-xl font-arabicUI3 transition-colors ${activeTab === 'details'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-white/5 text-white/70 hover:bg-white/10'
+                                }`}
+                        >
+                            تفاصيل الطالب
+                        </button>
+                    )}
+                </div>
+
                 <button
                     onClick={exportAsImage}
                     className="flex items-center gap-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg transition-colors text-white"
@@ -296,29 +405,6 @@ const LessonAnalytics = () => {
                     <FaImage />
                     <span>تصدير كصورة</span>
                 </button>
-
-            </div>
-            <div className="flex gap-4 mb-6">
-                <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`px-6 py-3 rounded-xl font-arabicUI3 transition-colors
-                        ${activeTab === 'overview'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
-                >
-                    نظرة عامة
-                </button>
-                {selectedStudent && (
-                    <button
-                        onClick={() => setActiveTab('details')}
-                        className={`px-6 py-3 rounded-xl font-arabicUI3 transition-colors
-                            ${activeTab === 'details'
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
-                    >
-                        تفاصيل الطالب
-                    </button>
-                )}
             </div>
 
             {activeTab === 'overview' ? (
@@ -472,120 +558,218 @@ const LessonAnalytics = () => {
                 selectedStudent && (
                     <div className="space-y-6">
                         {/* Student Info Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                                <h4 className="text-blue-400 mb-4">معلومات الطالب</h4>
-                                <div className="space-y-3">
-                                    <p className="text-white">{selectedStudent.email}</p>
-                                    {/* WhatsApp Numbers */}
-                                    {whatsappNumbers[selectedStudent.email]?.studentWhatsApp && (
-                                        <a href={getWhatsAppLink(whatsappNumbers[selectedStudent.email].studentWhatsApp)}
-                                            className="flex items-center gap-2 text-white/70 hover:text-white"
-                                            target="_blank" rel="noopener noreferrer">
-                                            <FaWhatsapp className="text-green-400" />
-                                            <span>رقم الطالب: {whatsappNumbers[selectedStudent.email].studentWhatsApp}</span>
-                                        </a>
-                                    )}
-                                    {whatsappNumbers[selectedStudent.email]?.parentWhatsApp && (
-                                        <a href={getWhatsAppLink(whatsappNumbers[selectedStudent.email].parentWhatsApp)}
-                                            className="flex items-center gap-2 text-white/70 hover:text-white"
-                                            target="_blank" rel="noopener noreferrer">
-                                            <FaWhatsapp className="text-green-400" />
-                                            <span>رقم ولي الأمر: {whatsappNumbers[selectedStudent.email].parentWhatsApp}</span>
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
 
-                            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                                <h4 className="text-blue-400 mb-4">إحصائيات المشاهدة</h4>
-                                <div className="space-y-3">
-                                    <p className="text-white/70">إجمالي المشاهدات: {selectedStudent.totalViews}</p>
-                                    <p className="text-white/70">عدد الدروس: {selectedStudent.uniqueLessons}</p>
-                                    <p className="text-white/70">آخر نشاط: {formatDate(selectedStudent.lastViewed)}</p>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Analytics Chart */}
-                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                            <h4 className="text-blue-400 mb-4">تحليل المشاهدات</h4>
-                            <div className="h-[400px]">
-                                <Bar
-                                    data={prepareStudentChartData(selectedStudent)}
-                                    options={{
-                                        ...chartOptions,
-                                        indexAxis: 'y',
-                                        maintainAspectRatio: false,
-                                    }}
-                                />
-                            </div>
-                        </div>
+                        {/* Course Progress Section */}
 
-                        {/* Lessons List */}
-                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                            <h4 className="text-blue-400 mb-4">تفاصيل الدروس</h4>
-                            <div className="space-y-4">
-                                {Array.from(selectedStudent.lessons)
-                                    .sort((a, b) => selectedStudent.lessonViews[b] - selectedStudent.lessonViews[a])
-                                    .map((lesson, index) => (
-                                        <div key={index}
-                                            className="bg-white/5 rounded-lg p-4 flex items-center justify-between">
-                                            <div>
-                                                <p className="text-white/90 font-arabicUI3">{lesson}</p>
-                                                <p className="text-sm text-white/50">
-                                                    آخر مشاهدة: {formatDate(selectedStudent.lastViewed)}
-                                                </p>
+
+                        {/* Redesigned Student Profile Section */}
+                        {activeTab === 'details' && selectedStudent && (
+                            <div className="space-y-6">
+                                {/* Student Profile Header */}
+                                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                                            <span className="text-3xl text-white font-bold">
+                                                {selectedStudent.email[0].toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h2 className="text-2xl font-bold text-white mb-2">{selectedStudent.email}</h2>
+                                            <div className="flex flex-wrap gap-4">
+                                                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-1">
+                                                    <FaEye className="text-blue-400" />
+                                                    <span className="text-white">{selectedStudent.totalViews} مشاهدة</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-1">
+                                                    <FaList className="text-purple-400" />
+                                                    <span className="text-white">{selectedStudent.uniqueLessons} درس</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-1">
+                                                    <FaClock className="text-green-400" />
+                                                    <span className="text-white">آخر نشاط: {formatDate(selectedStudent.lastViewed)}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <FaEye className="text-blue-400" />
-                                                <span className="text-white/70">
-                                                    {selectedStudent.lessonViews[lesson]} مشاهدة
-                                                </span>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            {whatsappNumbers[selectedStudent.email]?.studentWhatsApp && (
+                                                <a href={getWhatsAppLink(whatsappNumbers[selectedStudent.email].studentWhatsApp)}
+                                                    className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 px-4 py-2 rounded-lg transition-colors"
+                                                    target="_blank" rel="noopener noreferrer">
+                                                    <FaWhatsapp className="text-green-400" />
+                                                    <span className="text-white">{whatsappNumbers[selectedStudent.email].studentWhatsApp}</span>
+                                                </a>
+                                            )}
+                                            {whatsappNumbers[selectedStudent.email]?.parentWhatsApp && (
+                                                <a href={getWhatsAppLink(whatsappNumbers[selectedStudent.email].parentWhatsApp)}
+                                                    className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 px-4 py-2 rounded-lg transition-colors"
+                                                    target="_blank" rel="noopener noreferrer">
+                                                    <FaWhatsapp className="text-green-400" />
+                                                    <span className="text-white/70">ولي الأمر: {whatsappNumbers[selectedStudent.email].parentWhatsApp}</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Course Progress Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {studentProgress?.map((course, index) => (
+                                        <div key={index} className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="text-lg font-bold text-white">{course.courseName}</h3>
+                                                <div className="text-2xl font-bold text-blue-400">
+                                                    {Math.round(course.completion)}%
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="w-full bg-white/10 rounded-full h-3">
+                                                    <div
+                                                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                                                        style={{ width: `${course.completion}%` }}
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-white/5 rounded-lg p-4">
+                                                        <div className="text-sm text-white/70 mb-1">الدروس المكتملة</div>
+                                                        <div className="text-xl text-white font-bold">
+                                                            {course.watchedLessonsCount} / {course.totalLessons}
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-white/5 rounded-lg p-4">
+                                                        <div className="text-sm text-white/70 mb-1">الاختبارات المكتملة</div>
+                                                        <div className="text-xl text-white font-bold">
+                                                            {course.examsCompleted} / {course.examsTotal}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Lesson List Controls */}
+                                                <div className="flex justify-between items-center">
+                                                    <button
+                                                        onClick={() => setExpandedCourses(prev => ({
+                                                            ...prev,
+                                                            [course.courseId]: !prev[course.courseId]
+                                                        }))}
+                                                        className="text-white/70 hover:text-white flex items-center gap-2"
+                                                    >
+                                                        {expandedCourses[course.courseId] ? 'إخفاء الدروس' : 'عرض الدروس'}
+                                                        <FaList className="text-blue-400" />
+                                                    </button>
+                                                    {expandedCourses[course.courseId] && (
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => setLessonFilter(prev => ({
+                                                                    ...prev,
+                                                                    [course.courseId]: prev[course.courseId] === 'watched' ? null : 'watched'
+                                                                }))}
+                                                                className={`px-3 py-1 rounded-lg text-sm transition-colors ${lessonFilter[course.courseId] === 'watched'
+                                                                    ? 'bg-green-500/20 text-green-400'
+                                                                    : 'bg-white/5 text-white/70'
+                                                                    }`}
+                                                            >
+                                                                تم المشاهدة
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setLessonFilter(prev => ({
+                                                                    ...prev,
+                                                                    [course.courseId]: prev[course.courseId] === 'unwatched' ? null : 'unwatched'
+                                                                }))}
+                                                                className={`px-3 py-1 rounded-lg text-sm transition-colors ${lessonFilter[course.courseId] === 'unwatched'
+                                                                    ? 'bg-red-500/20 text-red-400'
+                                                                    : 'bg-white/5 text-white/70'
+                                                                    }`}
+                                                            >
+                                                                لم تتم المشاهدة
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Lessons List */}
+                                                {expandedCourses[course.courseId] && (
+                                                    <div className="mt-4 space-y-2">
+                                                        {lessonFilter[course.courseId] !== 'watched' &&
+                                                            course.unwatchedLessons
+                                                                .map((lesson, idx) => (
+                                                                    <div key={`unwatched-${idx}`}
+                                                                        className="flex items-center gap-2 bg-red-500/10 text-white/70 p-3 rounded-lg"
+                                                                    >
+                                                                        <FaTimes className="text-red-400" />
+                                                                        <span>{lesson.chapterTitle} - {lesson.lessonTitle}</span>
+                                                                    </div>
+                                                                ))
+                                                        }
+                                                        {lessonFilter[course.courseId] !== 'unwatched' &&
+                                                            course.watchedLessons
+                                                                .map((lesson, idx) => (
+                                                                    <div key={`watched-${idx}`}
+                                                                        className="flex items-center justify-between bg-green-500/10 text-white/70 p-3 rounded-lg"
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            <FaEye className="text-green-400" />
+                                                                            <span>{lesson}</span>
+                                                                        </div>
+                                                                        <span className="text-sm text-green-400">
+                                                                            {selectedStudent.lessonViews[lesson]} مشاهدة
+                                                                        </span>
+                                                                    </div>
+                                                                ))
+                                                        }
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* Quiz Results Card */}
-                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                            <h4 className="text-blue-400 mb-4">نتائج الاختبارات</h4>
-                            <div className="space-y-4">
-                                {quizResults.length > 0 ? (
-                                    quizResults.map((result, index) => (
-                                        <div key={index}
-                                            className="bg-white/5 rounded-lg p-4 flex items-center justify-between">
-                                            <div>
-                                                <p className="text-white/90 font-arabicUI3">
-                                                    {result.nameofquiz || 'اختبار'}
-                                                </p>
-                                                <p className="text-sm text-white/50">
-                                                    عدد الأسئلة: {result.numofqus || 0}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`px-3 py-1 rounded-full ${(result.quizGrade / result.numofqus) * 100 >= 50
-                                                        ? 'bg-green-500/20 text-green-400'
-                                                        : 'bg-red-500/20 text-red-400'
+                                {/* Quiz Results Section */}
+                                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                                    <h3 className="text-xl font-bold text-white mb-6">نتائج الاختبارات</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {quizResults.length > 0 ? quizResults.map((result, index) => (
+                                            <div key={index} className="bg-white/5 rounded-xl p-4 flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="text-white font-bold mb-1">{result.nameofquiz || 'اختبار'}</h4>
+                                                    <p className="text-sm text-white/50">{new Date(result.submittedAt).toLocaleDateString('ar-EG')}</p>
+                                                </div>
+                                                <div className={`px-6 py-3 rounded-lg font-bold ${(result.quizGrade / result.numofqus) * 100 >= 50
+                                                    ? 'bg-green-500/20 text-green-400'
+                                                    : 'bg-red-500/20 text-red-400'
                                                     }`}>
                                                     {result.quizGrade} / {result.numofqus}
                                                 </div>
-                                                <p className="text-sm text-white/50">
-                                                    {new Date(result.submittedAt).toLocaleDateString('ar-EG')}
-                                                </p>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-center text-white/50">لا توجد نتائج اختبارات</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                                        )) : (
+                                            <div className="col-span-2 text-center py-8 text-white/50">
+                                                لا توجد نتائج اختبارات
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Recent Activity Chart */}
+                                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                                    <h3 className="text-xl font-bold text-white mb-6">نشاط المشاهدة</h3>
+                                    <div className="h-[400px]">
+                                        <Bar
+                                            data={prepareStudentChartData(selectedStudent)}
+                                            options={{
+                                                ...chartOptions,
+                                                indexAxis: 'y',
+                                                maintainAspectRatio: false,
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div >
+                        )}
+                    </div >
                 )
             )}
-        </div>
+        </div >
     );
 };
 
