@@ -12,7 +12,7 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import html2canvas from 'html2canvas';
-import { FaUser, FaEye, FaClock, FaList, FaTimes, FaWhatsapp, FaDownload, FaFilePdf, FaImage } from "react-icons/fa";
+import { FaUser, FaEye, FaClock, FaList, FaTimes, FaWhatsapp, FaDownload, FaFilePdf, FaImage, FaGraduationCap, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 // Register ChartJS components
 ChartJS.register(
@@ -50,6 +50,8 @@ const LessonAnalytics = () => {
     const [studentProgress, setStudentProgress] = useState(null);
     const [expandedCourses, setExpandedCourses] = useState({});
     const [lessonFilter, setLessonFilter] = useState({}); // 'watched', 'unwatched', or null
+    const [examFilter, setExamFilter] = useState('all'); // 'all', 'completed', 'pending'
+    const [filteredExams, setFilteredExams] = useState([]);
 
     useEffect(() => {
         fetchLessonData();
@@ -312,6 +314,25 @@ const LessonAnalytics = () => {
         setStudentProgress(progress);
     };
 
+    const filterExams = (allExams, quizResults) => {
+        const completedExamIds = new Set(quizResults.map(r => r.nameofquiz));
+
+        switch (examFilter) {
+            case 'completed':
+                return allExams.filter(exam => completedExamIds.has(exam.title));
+            case 'pending':
+                return allExams.filter(exam => !completedExamIds.has(exam.title));
+            default:
+                return allExams;
+        }
+    };
+
+    useEffect(() => {
+        if (allExams.length > 0 && quizResults.length > 0) {
+            setFilteredExams(filterExams(allExams, quizResults));
+        }
+    }, [examFilter, allExams, quizResults]);
+
     const handleStudentSelect = (student) => {
         setSelectedStudent(student);
         setActiveTab('details');
@@ -369,6 +390,96 @@ const LessonAnalytics = () => {
             }
         }
     };
+
+    const ExamSection = () => (
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white">الاختبارات</h3>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setExamFilter('all')}
+                        className={`px-4 py-2 rounded-lg transition-colors ${examFilter === 'all'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                            }`}
+                    >
+                        جميع الاختبارات
+                    </button>
+                    <button
+                        onClick={() => setExamFilter('completed')}
+                        className={`px-4 py-2 rounded-lg transition-colors ${examFilter === 'completed'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <FaCheckCircle />
+                            <span>تم الإجتياز</span>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setExamFilter('pending')}
+                        className={`px-4 py-2 rounded-lg transition-colors ${examFilter === 'pending'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <FaTimesCircle />
+                            <span>لم يتم الإجتياز</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredExams.map((exam, index) => {
+                    const result = quizResults.find(r => r.nameofquiz === exam.title);
+                    const isCompleted = !!result;
+                    const linkedCourse = allCourses.find(c =>
+                        c.id === exam.courseId || c.nameofcourse === exam.courseName
+                    );
+
+                    return (
+                        <div key={index}
+                            className={`p-4 rounded-xl border ${isCompleted
+                                    ? 'bg-green-500/10 border-green-500/20'
+                                    : 'bg-white/5 border-white/10'
+                                }`}
+                        >
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-2">
+                                    <h4 className="text-lg font-bold text-white">
+                                        {exam.title}
+                                    </h4>
+                                    <div className="flex flex-col gap-1">
+                                        
+                                        {isCompleted && (
+                                            <div className="flex items-center gap-2">
+                                                <FaClock className="text-purple-400" />
+                                                <p className="text-sm text-white/60">
+                                                    {new Date(result.submittedAt).toLocaleDateString('ar-EG', {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric'
+                                                    })}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                {isCompleted && (
+                                    <div className="px-3 py-1 bg-green-500/20 rounded-lg text-green-400 text-sm">
+                                        {result.quizGrade} / {result.numofqus}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 
     return (
         <div ref={reportRef} className="p-6 space-y-6">
@@ -597,7 +708,7 @@ const LessonAnalytics = () => {
                                                     className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 px-4 py-2 rounded-lg transition-colors"
                                                     target="_blank" rel="noopener noreferrer">
                                                     <FaWhatsapp className="text-green-400" />
-                                                    <span className="text-white">{whatsappNumbers[selectedStudent.email].studentWhatsApp}</span>
+                                                    <span className="text-white">رقم الطالب :{whatsappNumbers[selectedStudent.email].studentWhatsApp}</span>
                                                 </a>
                                             )}
                                             {whatsappNumbers[selectedStudent.email]?.parentWhatsApp && (
@@ -749,6 +860,9 @@ const LessonAnalytics = () => {
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Add this before Recent Activity Chart */}
+                                <ExamSection />
 
                                 {/* Recent Activity Chart */}
                                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
