@@ -314,7 +314,7 @@ const Admin = () => {
             const formattedData = JSON.stringify(enrollmentData);
 
             try {
-                await GlobalApi.sendEnroll4Admin(selectedCourse, manualEmail, formattedData);
+
                 // Automatically set the enrollment as active
 
                 await dataAdmin();

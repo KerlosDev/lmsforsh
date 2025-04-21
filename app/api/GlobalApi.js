@@ -56,44 +56,6 @@ const getcourseinfo = async (courseid) => {
 };
 
 
-const getQuizDataWithEnroll = async (userEmail, quizId) => {
-  const query5 = gql`
-  query MyQuery {
-    userEnrolls(where: {userEmail: "${userEmail}", isHePaid: true}) {
-      id
-      courseid
-      userEmail
-      course {
-        exam(where: {id: "${quizId}"}) {
-          title
-          jsonexam
-        }
-      }
-    }
-  }
-  `;
-  const result5 = await request(MASTER_URL, query5);
-  return result5;
-};
-
-const updateQuizResults = async (userEmail, userName, quizResult) => {
-  const mutation = gql`
-  mutation UpdateQuizResults {
-    updateQuizresult(
-      where: { id: "cm9e95c4x1c7j07o3v11kjod3" }
-      data: { jsonReslut: """${JSON.stringify(quizResult)}""" }
-    ) {
-      id
-    }
-    publishQuizresult(where: { id: "cm9e95c4x1c7j07o3v11kjod3" }) {
-      id
-    }
-  }
-  `;
-
-  return await request(MASTER_URL, mutation);
-};
-
 const getQuizResults = async () => {
   const query = gql`
     query GetQuizResults {
@@ -149,8 +111,7 @@ const SaveGradesOfQuiz = async (userEmail, userName, userGrade, quizname, numofq
   }
 };
 
-// Update getQuizJsonResult to use centralized storage
-const getQuizJsonResult = async (email) => {
+ const getQuizJsonResult = async (email) => {
   try {
     const allResults = await getQuizResults();
     const userResults = allResults.results.filter(result => result.userEmail === email);
@@ -161,38 +122,6 @@ const getQuizJsonResult = async (email) => {
   }
 };
 
- 
-
-const editStateSub = async (idofEnroll, ActiveOrDeactive) => {
-  const query9 = gql`
-  mutation MyMutation {
-  updateUserEnroll(
-    data: {isHePaid: `+ ActiveOrDeactive + `}
-    where: {id: "`+ idofEnroll + `"}
-
-  ) {
-    id
-  }
-    
-  publishManyUserEnrollsConnection(first: 1000) {
-    edges {
-      node {
-        id
-      }
-    }
-  }
-}
-  
-
-
-
-`
-
-  const state4 = await request(MASTER_URL, query9)
-  return state4;
-
-
-}
 
 const publishEnrolls = async () => {
   const wie = gql`
@@ -281,30 +210,7 @@ const deleteNotification = async (id) => {
   return await request(MASTER_URL, mutation);
 };
 
-const sendEnroll4Admin = async (courseid, email) => {
-  const wie = gql`
  
-  mutation MyMutation {
-  createUserEnroll(
-    data: {course: {connect: {nicknameforcourse: "`+ courseid + `"}}, userEmail: "` + email + `", isHePaid: true, phonenumber: "010", courseid: "` + courseid + `"}
-
-  ) {
-    id
-  }
-  publishManyUserEnrollsConnection(first: 1000) {
-    edges {
-      node {
-        id
-      }
-    }
-  }
-}
-
-   `
-
-  const back = await request(MASTER_URL, wie)
-  return back
-}
 
 const sendExamData = async (formattedData, examTitle) => {
   const escapedData = formattedData.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -1425,59 +1331,56 @@ const saveWhatsAppData = async (whatsappData) => {
 };
 
 export default {
-  getOffer,
+  addChaptersForCourse,
+  addManualActivation,
   addQuiz,
-  sendquiz,
-  getNotifications,
+  checkUserEnrollment,
+  createBookOrder,
+  createClassCourse,
+  createCourse,
   createNotification,
-  updateNotification,
+  deleteActivation,
   deleteNotification,
-  sendExamData,
-  sendEnroll4Admin,
   getAllCourseList,
-  getcourseinfo,
-  getQuizDataWithEnroll,
-  SaveGradesOfQuiz, 
-  editStateSub,
-  publishEnrolls,
-  getPaymentLogs,
   getAllExams,
-  updateExam,
+  getActivationData,
+  getBooks,
+  getBookOrders,
+  getChaptersData,
+  getClassCourses,
+  getcourseinfo,
+  getExamOrder,
+  getNotifications,
+  getOffer,
+  getPaymentLogs,
+  getQuizById, 
   getQuizJsonResult,
   getQuizResults,
-  updateQuizResults,
-  getActivationData,
-  updateActivationData,
-  saveNewActivation,
-  updateActivationStatus,
-  checkUserEnrollment,
-  addManualActivation,
-  createCourse,
-  updateCourse,
-  getChaptersData,
-  updateChaptersData,
-  addChaptersForCourse,
-  updateCourseChapters,
-  initializeChapterData,
-  getExamOrder,
-  updateExamOrder,
-  updateCourseExams,
-  updateOffer,
-  getQuizById,
-  deleteActivation,
-  updateAllCourses,
-  createBookOrder,
-  getBookOrders,
-  saveBookOrder,
-  updateBookOrders,
-  getBooks,
-  saveBooks,
-  getClassCourses,
-  updateClassCourses,
-  createClassCourse, // Add this line
-  updateCourseClass,
   getStudentHistory,
-  saveStudentHistory, 
   getWhatsAppData,
+  initializeChapterData,
+  publishEnrolls,
+  saveBookOrder,
+  saveBooks,
+  saveNewActivation,
+  SaveGradesOfQuiz,
+  saveStudentHistory,
   saveWhatsAppData,
+  sendExamData,
+  sendquiz,
+  updateActivationData,
+  updateActivationStatus,
+  updateAllCourses,
+  updateBookOrders,
+  updateChaptersData,
+  updateClassCourses,
+  updateCourse,
+  updateCourseChapters,
+  updateCourseClass,
+  updateCourseExams,
+  updateExam,
+  updateExamOrder,
+  updateNotification,
+  updateOffer,
+  
 }
