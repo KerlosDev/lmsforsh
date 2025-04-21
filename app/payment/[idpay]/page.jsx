@@ -57,61 +57,61 @@ const Page = ({ params }) => {
     }, [user]);
 
     useEffect(() => {
-        const checkExistingPhones = async () => {
-            if (!user?.primaryEmailAddress?.emailAddress) return;
-
-            try {
-                const result = await GlobalApi.getWhatsAppData();
-                // Parse the single JSON object string
-                const whatsappData = result.whatsappdata?.whatsappnumber
-                    ? JSON.parse(result.whatsappdata.whatsappnumber)
-                    : null;
-
-                if (whatsappData &&
-                    whatsappData.userEmail === user.primaryEmailAddress.emailAddress &&
-                    whatsappData.studentWhatsApp &&
-                    whatsappData.parentWhatsApp) {
-                    // Found existing data for this user
-                    setHasSubmittedPhones(true);
-                    setShowPhoneForm(false);
-                    setStudentPhone(whatsappData.studentWhatsApp);
-                    setParentPhone(whatsappData.parentWhatsApp);
-                } else {
+        const checkWhatsAppNumbers = async () => {
+            if (user) {
+                try {
+                    const data = await GlobalApi.getWhatsAppData();
+                    let numbers = [];
+                    
+                    try {
+                        numbers = JSON.parse(data.whatsappdata?.whatsappnumber || '[]');
+                        // Ensure numbers is an array
+                        if (!Array.isArray(numbers)) {
+                            numbers = [];
+                        }
+                    } catch (e) {
+                        console.error('Error parsing WhatsApp data:', e);
+                        numbers = [];
+                    }
+                    
+                    // Check if user's email exists in the WhatsApp numbers
+                    const userExists = numbers.some(
+                        entry => entry.userEmail === user.primaryEmailAddress?.emailAddress
+                    );
+                    
+                    setHasSubmittedPhones(userExists);
+                    setShowPhoneForm(!userExists);
+                } catch (e) {
+                    console.error('Error checking WhatsApp numbers:', e);
                     setShowPhoneForm(true);
-                    setHasSubmittedPhones(false);
                 }
-            } catch (error) {
-                console.error('Error checking WhatsApp numbers:', error);
-                setShowPhoneForm(true);
-                setHasSubmittedPhones(false);
             }
         };
-
-        checkExistingPhones();
+        checkWhatsAppNumbers();
     }, [user]);
 
     const handlePhoneSubmit = async () => {
-        if (!studentPhone || !parentPhone || studentPhone.length < 11 || parentPhone.length < 11) {
-            toast.error('الرجاء إدخال أرقام واتساب صحيحة');
+        if (!studentPhone || !parentPhone) {
+            toast.error("يرجى إدخال كلا الرقمين");
+            return;
+        }
+
+        if (studentPhone.length < 10 || parentPhone.length < 10) {
+            toast.error("يرجى إدخال أرقام صحيحة");
             return;
         }
 
         try {
-            // Create new WhatsApp data object
-            const whatsappData = {
-                userEmail: user.primaryEmailAddress.emailAddress,
-                studentWhatsApp: studentPhone,
-                parentWhatsApp: parentPhone,
-                timestamp: new Date().toISOString()
-            };
-
-            await GlobalApi.saveWhatsAppData(whatsappData);
+            await GlobalApi.saveWhatsAppData({
+                email: user.primaryEmailAddress?.emailAddress,
+                studentPhone,
+                parentPhone
+            });
             setHasSubmittedPhones(true);
             setShowPhoneForm(false);
-            toast.success('تم حفظ أرقام الواتساب بنجاح');
+            toast.success("تم حفظ الأرقام بنجاح");
         } catch (error) {
-            console.error('Error saving WhatsApp numbers:', error);
-            toast.error('حدث خطأ أثناء حفظ أرقام الواتساب');
+            toast.error("حدث خطأ في حفظ الأرقام");
         }
     };
 

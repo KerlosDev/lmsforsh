@@ -73,16 +73,19 @@ const LessonAnalytics = () => {
         try {
             const result = await GlobalApi.getWhatsAppData();
             if (result?.whatsappdata?.whatsappnumber) {
-                // Parse the WhatsApp data
-                const data = JSON.parse(result.whatsappdata.whatsappnumber);
-                const userEmail = data.userEmail;
-                // Create an object with the user's WhatsApp numbers
-                setWhatsappNumbers({
-                    [userEmail]: {
-                        studentWhatsApp: data.studentWhatsApp,
-                        parentWhatsApp: data.parentWhatsApp
-                    }
-                });
+                // Parse the WhatsApp data array
+                const whatsappArray = JSON.parse(result.whatsappdata.whatsappnumber);
+                
+                // Convert array to object with userEmail as key
+                const whatsappObject = whatsappArray.reduce((acc, item) => {
+                    acc[item.userEmail] = {
+                        studentWhatsApp: item.studentWhatsApp,
+                        parentWhatsApp: item.parentWhatsApp
+                    };
+                    return acc;
+                }, {});
+    
+                setWhatsappNumbers(whatsappObject);
             }
         } catch (error) {
             console.error('Error fetching WhatsApp numbers:', error);

@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const CourseManager = () => {
     // Add new state for sorting
     const [sortBy, setSortBy] = useState('newest');
+    const [availableChapters, setAvailableChapters] = useState([]);
+    const [selectedChapters, setSelectedChapters] = useState([]);
 
     const [courses, setCourses] = useState([]);
     const [editingCourse, setEditingCourse] = useState(null);
@@ -76,6 +78,16 @@ const CourseManager = () => {
         fetchClasses(); // Add this line
     }, []);
 
+    const fetchAvailableChapters = async () => {
+        try {
+            const response = await fetch('/api/chapters.json'); // Adjust path as needed
+            const data = await response.json();
+            setAvailableChapters(data.chapters || []);
+        } catch (error) {
+            console.error('Error loading chapters:', error);
+            toast.error('Failed to load available chapters');
+        }
+    };
     const fetchCourses = async () => {
         setIsLoading(true);
         try {
@@ -943,24 +955,104 @@ const CourseManager = () => {
     // Add new features for course management
     const duplicateCourse = async (course) => {
         try {
+            // Debug logs
+            console.log('Original course:', course);
+
+            if (!course?.nicknameforcourse) {
+                throw new Error('Invalid course data - missing nickname');
+            }
+
+            const timestamp = Date.now();
+            const newNickname = `${course.nicknameforcourse}-copy-${timestamp}`;
+
+            // Get chapters data
+            const originalChapters = await GlobalApi.getChaptersData();
+            console.log('Fetched original chapters:', originalChapters);
+
+            // Get chapters for the course and parse properly
+            let chaptersData = [];
+            if (originalChapters?.chpater?.chapterData) {
+                try {
+                    const parsed = JSON.parse(originalChapters.chpater.chapterData);
+                    // Filter chapters for the specific course
+                    chaptersData = parsed.chapters.filter(ch =>
+                        ch.courseNickname === course.nicknameforcourse
+                    );
+                } catch (e) {
+                    console.error('Error parsing chapter data:', e);
+                    chaptersData = [];
+                }
+            }
+
+            // Get exam orders for the course
+            const examOrders = await GlobalApi.getExamOrder();
+            const courseExamOrders = examOrders?.examOrders?.filter(eo =>
+                eo.courseNickname === course.nicknameforcourse
+            ) || [];
+
+            // Create new chapters with the new course nickname
+            const courseChapters = chaptersData.map((chapter, index) => ({
+                id: `chapter-${timestamp}-${index}`,
+                title: chapter.title || '',
+                courseNickname: newNickname, // Set the new nickname here
+                order: chapter.order || index + 1,
+                lessons: (chapter.lessons || []).map((lesson, lessonIndex) => ({
+                    id: `lesson-${timestamp}-${lessonIndex}`,
+                    title: lesson.title || '',
+                    link: lesson.link || '',
+                    order: lesson.order || lessonIndex + 1
+                }))
+            }));
+
+            // Create new course object
             const newCourse = {
-                ...course,
-                nameofcourse: `نسخة من ${course.nameofcourse}`,
-                nicknameforcourse: `${course.nicknameforcourse}-copy-${Date.now()}`,
-                chapters: courseChapters[course.nicknameforcourse] || [],
-                exams: examOrder.filter(ex => ex.courseNickname === course.nicknameforcourse)
+                nameofcourse: `نسخة من ${course.nameofcourse || ''}`,
+                description: course.description || '',
+                price: Number(course.price) || 0,
+                isfree: Boolean(course.isfree),
+                isDraft: true,
+                dataofcourse: new Date().toISOString(),
+                nicknameforcourse: newNickname,
+                classOfCourse: course.classOfCourse || null,
+                chapters: courseChapters // Include the new chapters
             };
 
+            console.log('New course data:', newCourse);
+
+            // Create the course
             const result = await GlobalApi.createCourse(newCourse);
+
             if (result?.createCourse?.id) {
+                // Update chapters with the new nickname
+                if (courseChapters.length > 0) {
+                    console.log('Updating chapters with new nickname:', newNickname);
+                    await GlobalApi.updateCourseChapters(newNickname, courseChapters);
+                }
+
+                // Update exam orders with new nickname
+                if (courseExamOrders.length > 0) {
+                    const newExamOrders = courseExamOrders.map(eo => ({
+                        ...eo,
+                        courseNickname: newNickname
+                    }));
+                    await GlobalApi.updateExamOrder(newExamOrders);
+                }
+
+                // Update class association
+                if (newCourse.classOfCourse) {
+                    await GlobalApi.updateCourseClass(result.createCourse.id, newCourse.classOfCourse);
+                }
+
                 toast.success('تم نسخ الكورس بنجاح');
-                fetchCourses();
+                await fetchCourses();
+            } else {
+                throw new Error('Failed to create course copy');
             }
         } catch (error) {
+            console.error('Error duplicating course:', error);
             toast.error('فشل نسخ الكورس');
         }
     };
-
     const renderCourseStatus = (course) => (
         <div className="absolute top-4 left-4 flex items-center gap-2">
             <div className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2

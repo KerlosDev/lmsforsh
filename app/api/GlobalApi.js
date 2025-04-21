@@ -111,7 +111,7 @@ const SaveGradesOfQuiz = async (userEmail, userName, userGrade, quizname, numofq
   }
 };
 
- const getQuizJsonResult = async (email) => {
+const getQuizJsonResult = async (email) => {
   try {
     const allResults = await getQuizResults();
     const userResults = allResults.results.filter(result => result.userEmail === email);
@@ -210,8 +210,6 @@ const deleteNotification = async (id) => {
   return await request(MASTER_URL, mutation);
 };
 
- 
-
 const sendExamData = async (formattedData, examTitle) => {
   const escapedData = formattedData.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const query = gql`
@@ -234,9 +232,6 @@ const sendExamData = async (formattedData, examTitle) => {
   const result = await request(MASTER_URL, query);
   return result;
 };
-
-
-
 
 const getPaymentLogs = async () => {
   const query = gql`
@@ -1297,10 +1292,10 @@ const saveStudentHistory = async (historyData) => {
     throw error;
   }
 };
- 
+
 const getWhatsAppData = async () => {
   const query = gql`
-    query GetWhatsAppData {
+    query MyQuery {
       whatsappdata(where: {id: "cm9psso2z2wyd08o9lmwg3xev"}) {
         id
         whatsappnumber
@@ -1312,22 +1307,66 @@ const getWhatsAppData = async () => {
   return result;
 };
 
-const saveWhatsAppData = async (whatsappData) => {
-  const mutation = gql`
-    mutation UpdateWhatsAppData {
-      updateWhatsappdata(
-        where: { id: "cm9psso2z2wyd08o9lmwg3xev" }
-        data: { whatsappnumber: ${JSON.stringify(JSON.stringify(whatsappData))} }
-      ) {
-        id
-      }
-      publishWhatsappdata(where: { id: "cm9psso2z2wyd08o9lmwg3xev" }) {
-        id
-      }
-    }
-  `;
+const saveWhatsAppData = async (userData) => {
+  try {
+    const existingData = await getWhatsAppData();
+    let whatsappNumbers = [];
 
-  return await request(MASTER_URL, mutation);
+    try {
+      // Parse existing data
+      whatsappNumbers = JSON.parse(existingData.whatsappdata?.whatsappnumber || '[]');
+      if (!Array.isArray(whatsappNumbers)) {
+        whatsappNumbers = [];
+      }
+    } catch (e) {
+      console.error('Error parsing WhatsApp data:', e);
+      whatsappNumbers = [];
+    }
+
+    // Check if email already exists
+    const existingUserIndex = whatsappNumbers.findIndex(
+      entry => entry.userEmail === userData.email
+    );
+
+    if (existingUserIndex !== -1) {
+      // Email exists - update existing entry
+      whatsappNumbers[existingUserIndex] = {
+        ...whatsappNumbers[existingUserIndex],
+        studentWhatsApp: userData.studentPhone,
+        parentWhatsApp: userData.parentPhone,
+        updatedAt: new Date().toISOString()
+      };
+    } else {
+      // Email doesn't exist - add new entry
+      whatsappNumbers.push({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        userEmail: userData.email,
+        studentWhatsApp: userData.studentPhone,
+        parentWhatsApp: userData.parentPhone,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // Save the updated array
+    const mutation = gql`
+      mutation UpdateWhatsAppData {
+        updateWhatsappdata(
+          where: { id: "cm9psso2z2wyd08o9lmwg3xev" }
+          data: { whatsappnumber: ${JSON.stringify(JSON.stringify(whatsappNumbers))} }
+        ) {
+          id
+        }
+        publishWhatsappdata(where: { id: "cm9psso2z2wyd08o9lmwg3xev" }) {
+          id
+        }
+      }
+    `;
+
+    return await request(MASTER_URL, mutation);
+  } catch (error) {
+    console.error('Error saving WhatsApp data:', error);
+    throw error;
+  }
 };
 
 export default {
@@ -1353,7 +1392,7 @@ export default {
   getNotifications,
   getOffer,
   getPaymentLogs,
-  getQuizById, 
+  getQuizById,
   getQuizJsonResult,
   getQuizResults,
   getStudentHistory,
@@ -1382,5 +1421,5 @@ export default {
   updateExamOrder,
   updateNotification,
   updateOffer,
-  
+
 }
