@@ -836,31 +836,7 @@ const LessonAnalytics = () => {
                                     ))}
                                 </div>
 
-                                {/* Quiz Results Section */}
-                                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                                    <h3 className="text-xl font-bold text-white mb-6">نتائج الاختبارات</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {quizResults.length > 0 ? quizResults.map((result, index) => (
-                                            <div key={index} className="bg-white/5 rounded-xl p-4 flex items-center justify-between">
-                                                <div>
-                                                    <h4 className="text-white font-bold mb-1">{result.nameofquiz || 'اختبار'}</h4>
-                                                    <p className="text-sm text-white/50">{new Date(result.submittedAt).toLocaleDateString('ar-EG')}</p>
-                                                </div>
-                                                <div className={`px-6 py-3 rounded-lg font-bold ${(result.quizGrade / result.numofqus) * 100 >= 50
-                                                    ? 'bg-green-500/20 text-green-400'
-                                                    : 'bg-red-500/20 text-red-400'
-                                                    }`}>
-                                                    {result.quizGrade} / {result.numofqus}
-                                                </div>
-                                            </div>
-                                        )) : (
-                                            <div className="col-span-2 text-center py-8 text-white/50">
-                                                لا توجد نتائج اختبارات
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
+                               v
                                 {/* Add this before Recent Activity Chart */}
                                 <ExamSection />
 

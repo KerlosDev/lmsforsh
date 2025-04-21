@@ -6,7 +6,9 @@ import { BsPatchCheckFill } from "react-icons/bs";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaUsers, FaBook, FaQuestionCircle, FaList, FaChartPie, FaTag, FaBell } from "react-icons/fa";
-import { RiMenu4Fill } from "react-icons/ri";
+import { RiMenu4Fill, RiMoneyDollarCircleLine } from "react-icons/ri";
+import { MdFeedback, MdReportProblem, MdAnalytics } from "react-icons/md";
+import { BiSupport } from "react-icons/bi";
 import AnalyticsGraph from './AnalyticsGraph';
 import QuizManager from './QuizManager';
 import ExamList from './ExamList';
@@ -21,6 +23,8 @@ import { IoBookSharp } from "react-icons/io5";
 import BooksManager from './BooksManager';
 import AdminBooks from './AdminBooks';
 import LessonAnalytics from './LessonAnalytics';
+import RevenueAnalytics from './RevenueAnalytics'; 
+
 
 const Admin = () => {
     const [numOfStu, setnumOFStu] = useState([]);
@@ -494,6 +498,22 @@ const Admin = () => {
                                     <span className="font-arabicUI3">تحليلات الدروس</span>
                                 </button>
 
+                                <button
+                                    onClick={() => setActiveSection('revenue')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-right
+                                    ${activeSection === 'revenue' ? 'bg-blue-500 text-white' : 'text-white/70 hover:bg-white/10'}`}
+                                >
+                                    <RiMoneyDollarCircleLine className="ml-2" />
+                                    <span className="font-arabicUI3">تقارير المبيعات</span>
+                                </button>
+
+                              
+
+                                
+
+                           
+ 
+
                             </nav>
                         </div>
 
@@ -558,7 +578,9 @@ const Admin = () => {
                                 <BookOrders />
                             ) : activeSection === 'lessonAnalytics' ? (
                                 <LessonAnalytics />
-                            ) : null}
+                            ) : activeSection === 'revenue' ? (
+                                <RevenueAnalytics /> 
+                            )  : null}
                         </div>
                     </div>
 

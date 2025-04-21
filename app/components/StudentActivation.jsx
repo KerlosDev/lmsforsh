@@ -353,8 +353,7 @@ const StudentActivation = () => {
            
 
             // Then create and save the activation with approved status
-            await GlobalApi.saveNewActivation({
-                enrollmentId: enrollResponse.createUserEnroll.id,
+            await GlobalApi.saveNewActivation({ 
                 userEmail: newActivation.userEmail,
                 userName: newActivation.userEmail.split('@')[0],
                 phoneNumber: newActivation.phoneNumber,

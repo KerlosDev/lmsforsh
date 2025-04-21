@@ -9,13 +9,14 @@ const Footer = () => {
         {
             title: "روابط سريعة", items: [
                 { name: "الرئيسية", href: "/" },
-                { name: "كورساتك", href: "/courses" }, 
+                { name: "الدورات", href: "/courses" },
+                { name: "المواد", href: "/subjects" },
             ]
         },
         {
             title: "معلومات التواصل", items: [
 
-                { name: "واتساب", href: "tel:+201080506463" },
+                { name: "واتساب", href: "tel:+20123456789" },
             ]
         },
     ];
@@ -24,7 +25,8 @@ const Footer = () => {
         { icon: <FaFacebook size={20} />, href: "#", label: "Facebook" },
         { icon: <FaYoutube size={20} />, href: "#", label: "Youtube" },
         { icon: <FaTelegram size={20} />, href: "#", label: "Telegram" },
-        { icon: <BsWhatsapp size={20} />, href: "#", label: "WhatsApp" }, 
+        { icon: <BsWhatsapp size={20} />, href: "#", label: "WhatsApp" },
+        { icon: <FaDiscord size={20} />, href: "#", label: "Discord" },
     ];
 
     return (

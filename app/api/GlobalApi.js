@@ -161,26 +161,7 @@ const getQuizJsonResult = async (email) => {
   }
 };
 
-const data4admin = async () => {
-  const dataa4admin = gql`
-  query MyQuery {
-    userEnrolls(first: 1000, orderBy: updatedAt_DESC) {
-      userEmail
-      courseid
-      course {
-        price
-        updatedAt
-      }
-      isHePaid
-      id
-      updatedAt
-      createdAt
-    }
-  }
-  `
-  const admindata = await request(MASTER_URL, dataa4admin)
-  return admindata
-}
+ 
 
 const editStateSub = async (idofEnroll, ActiveOrDeactive) => {
   const query9 = gql`
@@ -1456,8 +1437,7 @@ export default {
   getAllCourseList,
   getcourseinfo,
   getQuizDataWithEnroll,
-  SaveGradesOfQuiz,
-  data4admin,
+  SaveGradesOfQuiz, 
   editStateSub,
   publishEnrolls,
   getPaymentLogs,
