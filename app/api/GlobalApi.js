@@ -165,6 +165,9 @@ const createNotification = async (notification) => {
       ) {
         id
       }
+      publishNotifiction(where: {id: ""}) {
+        id
+      }
       publishManyNotifictionsConnection {
         edges {
           node {

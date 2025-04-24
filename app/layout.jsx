@@ -32,7 +32,7 @@ const abrilFatface = Abril_Fatface({
 });
 
 export const metadata = {
-  title: "Shahad Hany",
+  title: "Walter White",
   description: "هدف منصتنا ان نخلي الكيمياء مجرد لعبة بالنسبالك ❤️",
 };
 
