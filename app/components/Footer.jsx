@@ -38,7 +38,7 @@ const Footer = () => {
                         <Link href="/" className="flex items-center gap-2">
                             <GiChemicalTank className="text-3xl text-teal-500" />
                             <span className="text-2xl text-white font-arabicUI2">
-                                منصة والتر وايت
+                                منصة شهد هاني
                             </span>
                         </Link>
                         <p className="text-gray-400 text-sm">
@@ -83,7 +83,7 @@ const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <p dir='rtl' className="text-gray-400 text-sm">
-                        © {new Date().getFullYear()} منصة والتر وايت - جميع الحقوق محفوظة
+                        © {new Date().getFullYear()} منصة شهد هاني - جميع الحقوق محفوظة
                     </p>
                     <a href="https://kerlos.site/"
                         className="relative group px-4 py-2 rounded-xl overflow-hidden">

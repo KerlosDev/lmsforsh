@@ -73,7 +73,7 @@ const EditOfferComponent = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {/* Input fields with responsive styles */}
                     <div className="space-y-1 sm:space-y-2">
-                        <label className="text-white text-sm sm:text-base font-arabicUI3">اسم الدكتور</label>
+                        <label className="text-white text-sm sm:text-base font-arabicUI3">اسم الدكتورة</label>
                         <input
                             value={offerForm.docname}
                             onChange={(e) => setOfferForm({ ...offerForm, docname: e.target.value })}
@@ -164,8 +164,8 @@ const EditOfferComponent = () => {
                         onClick={handleSave}
                         disabled={isLoading}
                         className={`w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base ${isLoading
-                                ? 'bg-gray-500'
-                                : 'bg-green-500 hover:bg-green-600'
+                            ? 'bg-gray-500'
+                            : 'bg-green-500 hover:bg-green-600'
                             } text-white rounded-lg font-arabicUI3 transition-colors`}
                     >
                         {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
