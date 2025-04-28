@@ -3,6 +3,7 @@ const { encrypt, decrypt, encryptObject, decryptObject, encryptArray, decryptArr
 
 const MASTER_URL = "https://ap-south-1.cdn.hygraph.com/content/cm482x6a502j207w6ujty7gg4/master"
 
+
 const getAllCourseList = async () => {
   const query = gql`
     query GetAllCourses {
