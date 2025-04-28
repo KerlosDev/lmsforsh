@@ -57,7 +57,7 @@ const Hero = () => {
                                     <h2 className="text-2xl sm:text-4xl lg:text-7xl font-arabicUI2 
                                                  bg-clip-text text-transparent bg-gradient-to-l 
                                                  from-blue-600 to-blue-400 text-center sm:text-right">
-                                        شهد هاني
+                                        والتر وايت
                                     </h2>
                                     <div className="relative hidden sm:block">
                                         <FaAtom className="text-4xl text-blue-500 animate-spin-slow" />
@@ -66,7 +66,7 @@ const Hero = () => {
                                 <div className="flex justify-center sm:justify-start items-baseline gap-2 
                                               text-xl sm:text-3xl lg:text-5xl font-arabicUI3 
                                               text-slate-700 dark:text-slate-300">
-                                    <h3>دكتورة الكيمياء</h3>
+                                    <h3>دكتور الكيمياء العالمي</h3>
                                 </div>
                             </div>
                         </div>
@@ -77,7 +77,7 @@ const Hero = () => {
                                                  backdrop-blur-sm">
                             <div className="absolute -right-10 top-0 w-1 h-full bg-gradient-to-b from-red-500 to-transparent" />
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-arabicUI3 text-slate-800 dark:text-slate-200">
-                                ترحب بدفعة{' '}
+                                يرحب بدفعة{' '}
                                 <span className="text-4xl sm:text-5xl lg:text-6xl text-red-500 font-bold">2025</span>
                             </h1>
                             <div className="flex items-center gap-2 sm:gap-3">

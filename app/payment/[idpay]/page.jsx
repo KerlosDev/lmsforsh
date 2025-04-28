@@ -62,7 +62,7 @@ const Page = ({ params }) => {
                 try {
                     const data = await GlobalApi.getWhatsAppData();
                     let numbers = [];
-                    
+
                     try {
                         numbers = JSON.parse(data.whatsappdata?.whatsappnumber || '[]');
                         // Ensure numbers is an array
@@ -73,12 +73,12 @@ const Page = ({ params }) => {
                         console.error('Error parsing WhatsApp data:', e);
                         numbers = [];
                     }
-                    
+
                     // Check if user's email exists in the WhatsApp numbers
                     const userExists = numbers.some(
                         entry => entry.userEmail === user.primaryEmailAddress?.emailAddress
                     );
-                    
+
                     setHasSubmittedPhones(userExists);
                     setShowPhoneForm(!userExists);
                 } catch (e) {
@@ -352,7 +352,7 @@ const Page = ({ params }) => {
                                             </div>
                                             <div>
                                                 <h3 className="text-lg font-medium">{courseInfo.nameofcourse}</h3>
-                                                <p className="text-blue-400 text-sm">مع أ/ شهد هاني</p>
+                                                <p className="text-blue-400 text-sm">مع أ/ والتر وايت</p>
                                             </div>
                                         </div>
 
